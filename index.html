@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>MeuDeneros</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -23,8 +23,11 @@
         }
       }(window.location));
     </script>
-    <script type="module" crossorigin src="/assets/index-Q_187w_Y.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-zxHBUjhN.css">
+    <script>
+      (function(){var base="/meudenerosapp";var desc=Object.getOwnPropertyDescriptor(Location.prototype,"pathname");if(desc&&desc.configurable){Object.defineProperty(Location.prototype,"pathname",{get:function(){var p=desc.get.call(this);return(p===base||p.startsWith(base+"/"))?(p.slice(base.length)||"/"):p;},configurable:true,enumerable:desc.enumerable});}var _p=history.pushState.bind(history);var _r=history.replaceState.bind(history);function ab(u){if(!u||typeof u!="string"||u.startsWith("http")||u===base||u.startsWith(base+"/"))return u;if(u[0]!="/")return u;return base+u;}history.pushState=function(s,t,u){_p(s,t,ab(u));};history.replaceState=function(s,t,u){_r(s,t,ab(u));};})();
+    </script>
+    <script type="module" crossorigin src="./assets/index-Q_187w_Y.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-zxHBUjhN.css">
     <style>
   #mob-menu-btn {
     display: none;
