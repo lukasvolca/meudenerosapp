@@ -339,7 +339,9 @@
         padding: 0;
         transition: opacity 0.15s;
       }
-      #dn-overview-widget .dn-link:hover { opacity: 0.75; }
+      #dn-overview-widget .dn-link:hover {
+        opacity: 0.75;
+      }
       #dn-overview-widget .dn-chart-wrap {
         display: flex;
         align-items: center;
@@ -424,25 +426,55 @@
         "use strict";
 
         var MONTH_NAMES = [
-          "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-          "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
+          "Janeiro",
+          "Fevereiro",
+          "Março",
+          "Abril",
+          "Maio",
+          "Junho",
+          "Julho",
+          "Agosto",
+          "Setembro",
+          "Outubro",
+          "Novembro",
+          "Dezembro",
         ];
         var PALETTE = [
-          "#4ade80","#fb923c","#60a5fa","#a78bfa","#f472b6",
-          "#facc15","#34d399","#f87171","#818cf8","#2dd4bf",
+          "#4ade80",
+          "#fb923c",
+          "#60a5fa",
+          "#a78bfa",
+          "#f472b6",
+          "#facc15",
+          "#34d399",
+          "#f87171",
+          "#818cf8",
+          "#2dd4bf",
         ];
 
         function fmtBRL(n) {
-          return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+          return n.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          });
         }
 
         function getMonthData() {
           var now = new Date();
           var year = now.getFullYear();
           var month = now.getMonth();
-          var transactions = [], categories = [];
-          try { transactions = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
-          try { categories = JSON.parse(localStorage.getItem("finance_categories") || "[]"); } catch (e) {}
+          var transactions = [],
+            categories = [];
+          try {
+            transactions = JSON.parse(
+              localStorage.getItem("finance_transactions") || "[]",
+            );
+          } catch (e) {}
+          try {
+            categories = JSON.parse(
+              localStorage.getItem("finance_categories") || "[]",
+            );
+          } catch (e) {}
 
           var expenses = transactions.filter(function (t) {
             if (t.type !== "expense") return false;
@@ -454,7 +486,9 @@
           expenses.forEach(function (t) {
             var id = t.categoryId || "__none__";
             if (!byCategory[id]) {
-              var cat = categories.find(function (c) { return c.id === id; });
+              var cat = categories.find(function (c) {
+                return c.id === id;
+              });
               byCategory[id] = {
                 id: id,
                 name: (cat && cat.name) || t.categoryName || "Outros",
@@ -467,18 +501,28 @@
           var sorted = Object.values(byCategory).sort(function (a, b) {
             return b.total - a.total;
           });
-          var total = sorted.reduce(function (s, c) { return s + c.total; }, 0);
-          return { sorted: sorted, total: total, monthName: MONTH_NAMES[month] };
+          var total = sorted.reduce(function (s, c) {
+            return s + c.total;
+          }, 0);
+          return {
+            sorted: sorted,
+            total: total,
+            monthName: MONTH_NAMES[month],
+          };
         }
 
         function polarXY(cx, cy, r, angleDeg) {
-          var rad = (angleDeg - 90) * Math.PI / 180;
+          var rad = ((angleDeg - 90) * Math.PI) / 180;
           return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
         }
 
         function buildSVG(sorted, total) {
           if (!total) return "";
-          var cx = 100, cy = 100, r = 70, sw = 22, gap = 2.5;
+          var cx = 100,
+            cy = 100,
+            r = 70,
+            sw = 22,
+            gap = 2.5;
           var currentAngle = 0;
           var arcs = "";
           sorted.forEach(function (seg, i) {
@@ -489,24 +533,50 @@
             var e = polarXY(cx, cy, r, currentAngle + sweep);
             var large = sweep > 180 ? 1 : 0;
             arcs +=
-              '<path d="M ' + s[0].toFixed(2) + " " + s[1].toFixed(2) +
-              " A " + r + " " + r + " 0 " + large + " 1 " +
-              e[0].toFixed(2) + " " + e[1].toFixed(2) + '"' +
-              ' fill="none" stroke="' + PALETTE[i % PALETTE.length] + '"' +
-              ' stroke-width="' + sw + '" stroke-linecap="round"/>';
+              '<path d="M ' +
+              s[0].toFixed(2) +
+              " " +
+              s[1].toFixed(2) +
+              " A " +
+              r +
+              " " +
+              r +
+              " 0 " +
+              large +
+              " 1 " +
+              e[0].toFixed(2) +
+              " " +
+              e[1].toFixed(2) +
+              '"' +
+              ' fill="none" stroke="' +
+              PALETTE[i % PALETTE.length] +
+              '"' +
+              ' stroke-width="' +
+              sw +
+              '" stroke-linecap="round"/>';
             currentAngle += pct * 360;
           });
           return (
             '<svg viewBox="0 0 200 200" width="184" height="184" style="display:block;flex-shrink:0;">' +
-            '<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
-            '" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="' + sw + '"/>' +
-            arcs + "</svg>"
+            '<circle cx="' +
+            cx +
+            '" cy="' +
+            cy +
+            '" r="' +
+            r +
+            '" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="' +
+            sw +
+            '"/>' +
+            arcs +
+            "</svg>"
           );
         }
 
         function buildWidget() {
           var data = getMonthData();
-          var sorted = data.sorted, total = data.total, monthName = data.monthName;
+          var sorted = data.sorted,
+            total = data.total,
+            monthName = data.monthName;
           var top3 = sorted.slice(0, 3);
           var svg = buildSVG(sorted, total);
 
@@ -516,10 +586,21 @@
               var init = cat.name.charAt(0).toUpperCase();
               return (
                 '<div class="dn-cat-item">' +
-                '<div class="dn-cat-icon" style="background:' + color + '1a;border:1px solid ' + color + '33;color:' + color + ';">' +
-                init + "</div>" +
-                '<span class="dn-cat-amount">' + fmtBRL(cat.total) + "</span>" +
-                '<span class="dn-cat-name">' + cat.name + "</span>" +
+                '<div class="dn-cat-icon" style="background:' +
+                color +
+                "1a;border:1px solid " +
+                color +
+                "33;color:" +
+                color +
+                ';">' +
+                init +
+                "</div>" +
+                '<span class="dn-cat-amount">' +
+                fmtBRL(cat.total) +
+                "</span>" +
+                '<span class="dn-cat-name">' +
+                cat.name +
+                "</span>" +
                 "</div>"
               );
             })
@@ -527,12 +608,16 @@
 
           var body =
             sorted.length === 0
-              ? '<p class="dn-empty">Nenhuma despesa registrada em ' + monthName + ".</p>"
+              ? '<p class="dn-empty">Nenhuma despesa registrada em ' +
+                monthName +
+                ".</p>"
               : '<div class="dn-chart-wrap">' +
                 svg +
                 '<div class="dn-chart-center">' +
                 '<div class="dn-label">Total no mês</div>' +
-                '<div class="dn-total">' + fmtBRL(total) + "</div>" +
+                '<div class="dn-total">' +
+                fmtBRL(total) +
+                "</div>" +
                 "</div></div>" +
                 (top3.length
                   ? '<div class="dn-top-row">' + topHtml + "</div>"
@@ -543,17 +628,22 @@
           el.innerHTML =
             '<div class="glass-panel dn-card">' +
             '<div class="dn-header">' +
-            '<h3 class="dn-title">Gastos de ' + monthName + "</h3>" +
+            '<h3 class="dn-title">Gastos de ' +
+            monthName +
+            "</h3>" +
             '<button class="dn-link" id="dn-analyze-btn">' +
             'Analisar <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
             "</button></div>" +
             body +
             "</div>";
 
-          el.querySelector("#dn-analyze-btn").addEventListener("click", function () {
-            history.pushState(null, "", "/categories");
-            window.dispatchEvent(new PopStateEvent("popstate"));
-          });
+          el.querySelector("#dn-analyze-btn").addEventListener(
+            "click",
+            function () {
+              history.pushState(null, "", "/categories");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            },
+          );
 
           return el;
         }
@@ -1184,29 +1274,45 @@
         function openIconPicker(catId) {
           var cats8 = document.querySelector(".space-y-8");
           if (!cats8) return;
+          var filterPanel = cats8.querySelector(".glass-panel.space-y-4");
+          if (!filterPanel) return;
           observerPaused = true;
 
-          // Make cats8 a fixed full-screen overlay so React's inline icon picker is visible
+          // Backdrop overlay
+          var backdrop = document.createElement("div");
+          backdrop.id = "icon-ov-backdrop";
+          backdrop.style.cssText =
+            "position:fixed;inset:0;z-index:9989;background:rgba(0,0,0,0.7);";
+          document.body.appendChild(backdrop);
+
+          // Position filterPanel as a bottom-sheet — visible but only showing the picker
           cats8.style.cssText =
-            "position:fixed;inset:0;z-index:9990;overflow-y:auto;" +
-            "background:rgba(0,0,0,0.95);padding:1rem;display:block;box-sizing:border-box;";
-          Array.from(cats8.children).forEach(function (ch) {
-            ch.style.display = "";
+            "position:fixed;bottom:0;left:0;right:0;z-index:9990;" +
+            "display:block;pointer-events:none;";
+          filterPanel.style.cssText =
+            "position:relative;z-index:9990;border-radius:1rem 1rem 0 0;" +
+            "padding:1rem;pointer-events:auto;max-height:80vh;overflow-y:auto;";
+          // Hide everything in filterPanel initially
+          Array.from(filterPanel.children).forEach(function (ch) {
+            ch.style.visibility = "hidden";
+            ch.style.height = "0";
+            ch.style.overflow = "hidden";
+            ch.style.margin = "0";
+            ch.style.padding = "0";
           });
 
-          // Close button
-          var closeBtn = document.createElement("button");
-          closeBtn.id = "icon-ov-close";
-          closeBtn.style.cssText =
-            "display:block;margin:0 0 1rem auto;padding:0.5rem 0.75rem;" +
-            "background:rgba(255,255,255,0.08);border:none;border-radius:0.5rem;" +
-            "color:#fff;font-size:0.875rem;cursor:pointer;";
-          closeBtn.textContent = "✕ Fechar";
-          cats8.insertBefore(closeBtn, cats8.firstChild);
-
           function closeIconOverlay() {
-            var cb = document.getElementById("icon-ov-close");
-            if (cb) cb.remove();
+            var bd = document.getElementById("icon-ov-backdrop");
+            if (bd) bd.remove();
+            // Restore filterPanel children
+            Array.from(filterPanel.children).forEach(function (ch) {
+              ch.style.visibility = "";
+              ch.style.height = "";
+              ch.style.overflow = "";
+              ch.style.margin = "";
+              ch.style.padding = "";
+            });
+            filterPanel.style.cssText = "";
             cats8.style.cssText = "";
             Array.from(cats8.children).forEach(function (ch) {
               ch.style.display = "none";
@@ -1215,33 +1321,56 @@
             setTimeout(buildCatList, 200);
           }
 
-          closeBtn.addEventListener("click", function () {
-            // Cancel edit mode first
-            var cancelEditBtn = cats8.querySelector(
-              '[data-cat-pill="' + catId + '"] .flex-col button:last-child',
+          backdrop.addEventListener("click", function () {
+            var cancelBtn = cats8.querySelector(
+              ".flex-col button:last-child[class*='rounded-lg']",
             );
-            if (cancelEditBtn) cancelEditBtn.click();
-            setTimeout(closeIconOverlay, 100);
+            if (cancelBtn) cancelBtn.click();
+            setTimeout(closeIconOverlay, 80);
           });
 
-          // Click Editar to enter edit mode
+          // Enter edit mode
           var editBtn = cats8.querySelector(
             '[data-cat-pill="' + catId + '"] button[title="Editar"]',
           );
-          if (!editBtn) {
-            closeIconOverlay();
-            return;
-          }
+          if (!editBtn) { closeIconOverlay(); return; }
           editBtn.click();
 
           // Then click Alterar ícone
           setTimeout(function () {
             var iconAlterBtn = cats8.querySelector(
-              '[data-cat-pill="' + catId + '"] button[title="Alterar ícone"]',
+              'button[title="Alterar ícone"]',
             );
             if (iconAlterBtn) iconAlterBtn.click();
 
-            // Auto-close when edit mode ends (input disappears)
+            // Wait for _B picker to render, then show only it
+            var waitCount = 0;
+            var waitTimer = setInterval(function () {
+              waitCount++;
+              // _B is the last child of filterPanel when it appears (has a grid inside)
+              var picker = filterPanel.lastElementChild;
+              var prevPicker = picker && picker.previousElementSibling;
+              var isPickerRendered = picker && prevPicker &&
+                picker !== prevPicker &&
+                picker.querySelector(".grid");
+              if (isPickerRendered || waitCount > 20) {
+                clearInterval(waitTimer);
+                if (!isPickerRendered) { closeIconOverlay(); return; }
+                // Hide header and pills, reveal only the picker
+                Array.from(filterPanel.children).forEach(function (ch) {
+                  if (ch === picker) {
+                    ch.style.visibility = "";
+                    ch.style.height = "";
+                    ch.style.overflow = "";
+                    ch.style.margin = "";
+                    ch.style.padding = "";
+                  }
+                  // else stays hidden
+                });
+              }
+            }, 80);
+
+            // When edit mode ends (user picked icon → React exits edit), close
             var pickerObs = new MutationObserver(function () {
               var inp = cats8.querySelector(
                 '[data-cat-pill="' + catId + '"] input',
