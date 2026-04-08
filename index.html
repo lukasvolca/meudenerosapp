@@ -142,6 +142,20 @@
         .space-y-6 > div > h4 {
           padding: 0.5rem 0.25rem 0.25rem !important;
         }
+
+        /* ===== CATEGORIES PAGE ===== */
+        /* Hide the pill filter bar entirely */
+        .space-y-8 > div:first-child {
+          display: none !important;
+        }
+        /* Hide stats grid */
+        .grid.grid-cols-1.md\:grid-cols-3 {
+          display: none !important;
+        }
+        /* Hide transaction history section in categories */
+        .space-y-8 > div:last-child.glass-panel {
+          display: none !important;
+        }
       }
       @media (min-width: 768px) {
         #mob-menu-btn {
@@ -150,6 +164,50 @@
         #mob-overlay {
           display: none !important;
         }
+      }
+
+      /* ===== CATEGORY CLEAN LIST ===== */
+      #cat-list {
+        display: none;
+      }
+      @media (max-width: 767px) {
+        #cat-list {
+          display: block;
+          padding: 0 0.25rem;
+        }
+      }
+      .cat-row {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        padding: 0.8rem 0.25rem;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+      .cat-row:last-child { border-bottom: none; }
+      .cat-row-right {
+        margin-left: auto;
+        text-align: right;
+      }
+      .cat-row-name {
+        color: #fff;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+      .cat-row-total {
+        color: rgba(255,255,255,0.55);
+        font-size: 0.78rem;
+        margin-top: 1px;
+      }
+      .cat-list-title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(255,255,255,0.35);
+        padding: 0 0.25rem 0.5rem;
       }
       /* Long-press modal */
       #lp-modal {
@@ -564,6 +622,229 @@
           pressing = false;
           clearTimeout(pressTimer);
         }, { passive: true });
+      })();
+    </script>
+    <script>
+      // Category clean list + long-press actions for categories (mobile)
+      (function () {
+        if (window.innerWidth >= 768) return;
+
+        // ---- Long-press modal for categories ----
+        var catModal = document.createElement("div");
+        catModal.id = "cat-lp-modal";
+        catModal.style.cssText =
+          "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);" +
+          "z-index:9998;align-items:flex-end;justify-content:center;" +
+          "padding-bottom:env(safe-area-inset-bottom,0);";
+        catModal.innerHTML =
+          '<div id="cat-lp-box" style="background:#1c1c1e;border:1px solid rgba(255,255,255,0.12);' +
+          "border-radius:1rem 1rem 0 0;width:100%;max-width:480px;padding:0.5rem 0 1rem;" +
+          'box-shadow:0 -8px 40px rgba(0,0,0,0.6);">' +
+          '<div style="width:2.5rem;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0.5rem auto 1rem;"></div>' +
+          '<div id="cat-lp-name" style="color:rgba(255,255,255,0.5);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:0 1.25rem 0.75rem;"></div>' +
+          '<button class="lp-btn lp-btn-edit" id="cat-lp-edit">' +
+          '<span class="lp-btn-icon" style="background:rgba(255,255,255,0.1);color:#fff;">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+          "</span>Editar nome / \u00edcone</button>" +
+          '<button class="lp-btn lp-btn-del" id="cat-lp-del">' +
+          '<span class="lp-btn-icon" style="background:rgba(239,68,68,0.18);color:#ef4444;">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+          "</span>Excluir categoria</button>" +
+          '<div id="cat-lp-confirm" style="display:none;padding:1rem 1.25rem 0.5rem;">' +
+          '<p style="color:rgba(255,255,255,0.8);font-size:0.9rem;margin:0 0 1rem;">Excluir esta categoria? As transa\u00e7\u00f5es n\u00e3o ser\u00e3o apagadas.</p>' +
+          '<div style="display:flex;gap:0.5rem;">' +
+          '<button id="cat-lp-cancel" style="flex:1;padding:0.75rem;border-radius:0.75rem;border:none;background:rgba(255,255,255,0.1);color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;">Cancelar</button>' +
+          '<button id="cat-lp-ok" style="flex:1;padding:0.75rem;border-radius:0.75rem;border:none;background:#ef4444;color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;">Excluir</button>' +
+          "</div></div></div>";
+        document.body.appendChild(catModal);
+
+        var activeCatItem = null; // the cat-row div
+
+        function closeCatModal() {
+          catModal.style.display = "none";
+          document.getElementById("cat-lp-confirm").style.display = "none";
+          document.getElementById("cat-lp-edit").style.display = "";
+          document.getElementById("cat-lp-del").style.display = "";
+          activeCatItem = null;
+        }
+
+        function openCatModal(row) {
+          activeCatItem = row;
+          document.getElementById("cat-lp-name").textContent =
+            row.dataset.name || "";
+          catModal.style.display = "flex";
+        }
+
+        document.getElementById("cat-lp-edit").addEventListener("click", function () {
+          if (!activeCatItem) return;
+          var catId = activeCatItem.dataset.catId;
+          closeCatModal();
+          // Find the React edit button for this category pill
+          setTimeout(function () {
+            var pill = document.querySelector(
+              '[data-cat-pill="' + catId + '"] button[title="Editar"]',
+            );
+            if (pill) pill.click();
+          }, 80);
+        });
+
+        document.getElementById("cat-lp-del").addEventListener("click", function () {
+          document.getElementById("cat-lp-edit").style.display = "none";
+          document.getElementById("cat-lp-del").style.display = "none";
+          document.getElementById("cat-lp-confirm").style.display = "block";
+        });
+
+        document.getElementById("cat-lp-ok").addEventListener("click", function () {
+          if (!activeCatItem) return;
+          var catId = activeCatItem.dataset.catId;
+          closeCatModal();
+          setTimeout(function () {
+            var pill = document.querySelector(
+              '[data-cat-pill="' + catId + '"] button[title="Excluir"]',
+            );
+            if (pill) pill.click();
+          }, 80);
+        });
+
+        document.getElementById("cat-lp-cancel").addEventListener("click", closeCatModal);
+        catModal.addEventListener("click", function (e) {
+          if (e.target === catModal) closeCatModal();
+        });
+
+        // ---- Build / refresh category list ----
+        var listEl = null;
+        var catPressTimer = null;
+        var catPressing = false;
+
+        function formatBRL(n) {
+          return "R$ " + n.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function isOnCatPage() {
+          // The categories page has .space-y-8 with 3 divs
+          return !!document.querySelector(".space-y-8");
+        }
+
+        function buildCatList() {
+          if (!isOnCatPage()) {
+            if (listEl) listEl.style.display = "none";
+            return;
+          }
+
+          // Gather pills: each pill wrapper is a div > (editing div | group div)
+          // The "group relative" pills are the non-editing state
+          var pills = Array.from(
+            document.querySelectorAll(
+              '.space-y-8 .flex.flex-wrap.gap-2 > div',
+            ),
+          );
+
+          // Skip if pills not rendered yet or only "Todas" btn present
+          if (pills.length === 0) return;
+
+          if (!listEl) {
+            listEl = document.createElement("div");
+            listEl.id = "cat-list";
+            listEl.innerHTML = '<div class="cat-list-title">Categorias</div>';
+          }
+
+          // Clear rows (keep title)
+          while (listEl.children.length > 1) listEl.removeChild(listEl.lastChild);
+
+          // Collect transaction totals per category from the stats in DOM
+          // We'll read what React rendered in the transaction list section
+          var totals = {};
+          document.querySelectorAll(".space-y-8 > div:last-child .glass-panel.rounded-xl.p-4.group").forEach(function (item) {
+            // Each item has categoryName text and amount
+            var catSpan = item.querySelector(".text-xs.text-muted-foreground");
+            var amountSpan = item.querySelector(".font-bold.font-display");
+            var isExpense = amountSpan && amountSpan.textContent.trim().startsWith("-") === false && item.querySelector(".text-destructive") !== null;
+            if (catSpan && amountSpan) {
+              var catName = catSpan.textContent.trim();
+              var amtText = amountSpan.textContent.replace(/[R$+\-\s]/g, "").replace(",", ".").replace(/\./g, function(m, o, s) {
+                return o < s.lastIndexOf(".") ? "" : ".";
+              });
+              var amt = parseFloat(amtText) || 0;
+              totals[catName] = (totals[catName] || 0) + amt;
+            }
+          });
+
+          pills.forEach(function (wrapper) {
+            // Find the group div (non-editing state)
+            var groupDiv = wrapper.querySelector(".group.relative");
+            if (!groupDiv) return;
+
+            // Get category name from the text button
+            var nameBtn = groupDiv.querySelector("button.flex-1");
+            if (!nameBtn) return;
+            var name = nameBtn.textContent.trim();
+            if (!name) return;
+
+            // Get the icon element (first button in group)
+            var iconBtn = groupDiv.querySelector("button.flex-shrink-0");
+            var iconHtml = iconBtn ? iconBtn.innerHTML : '<span style="width:2.8rem;height:2.8rem;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border-radius:50%;"></span>';
+
+            // Give the wrapper a data attribute for finding edit/delete buttons
+            var catId = "cat-" + name.toLowerCase().replace(/\s+/g, "-");
+            wrapper.setAttribute("data-cat-pill", catId);
+
+            var total = totals[name] || 0;
+
+            var row = document.createElement("div");
+            row.className = "cat-row";
+            row.dataset.catId = catId;
+            row.dataset.name = name;
+            row.innerHTML =
+              '<div style="flex-shrink:0;width:2.8rem;height:2.8rem;display:flex;align-items:center;justify-content:center;">' +
+              iconHtml +
+              "</div>" +
+              '<div class="cat-row-name">' + name + "</div>" +
+              '<div class="cat-row-right">' +
+              '<div class="cat-row-total">' + (total > 0 ? formatBRL(total) : "") + "</div>" +
+              "</div>";
+
+            // Long-press on the row
+            row.addEventListener("touchstart", function (e) {
+              catPressing = true;
+              catPressTimer = setTimeout(function () {
+                if (catPressing) {
+                  openCatModal(row);
+                  navigator.vibrate && navigator.vibrate(40);
+                }
+              }, 600);
+            }, { passive: true });
+
+            row.addEventListener("touchend", function () {
+              catPressing = false;
+              clearTimeout(catPressTimer);
+            }, { passive: true });
+
+            row.addEventListener("touchmove", function () {
+              catPressing = false;
+              clearTimeout(catPressTimer);
+            }, { passive: true });
+
+            listEl.appendChild(row);
+          });
+
+          // Inject list into page if not already
+          var container = document.querySelector(".space-y-8");
+          if (container && !container.contains(listEl)) {
+            container.insertBefore(listEl, container.firstChild);
+          }
+          listEl.style.display = "block";
+        }
+
+        // Watch DOM for category page rendering
+        var pending2 = false;
+        new MutationObserver(function () {
+          if (pending2) return;
+          pending2 = true;
+          requestAnimationFrame(function () {
+            pending2 = false;
+            buildCatList();
+          });
+        }).observe(document.body, { childList: true, subtree: true });
       })();
     </script>
   </body>
