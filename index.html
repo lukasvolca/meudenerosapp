@@ -259,21 +259,35 @@
             closeModal(false);
             return;
           }
-          var setter = Object.getOwnPropertyDescriptor(
+
+          // Restore display so React processes events on a live element
+          ri.parentElement.style.display = "";
+
+          // Set value via native setter
+          var nativeSetter = Object.getOwnPropertyDescriptor(
             HTMLInputElement.prototype,
             "value",
           ).set;
-          setter.call(ri, val);
+          nativeSetter.call(ri, val);
+
+          // Trigger React's onChange to update the V state variable
           ri.dispatchEvent(new Event("input", { bubbles: true }));
+
+          // Wait 150ms so React 18 commits the state update, then
+          // simulate Enter — the onKeyDown handler calls he() which
+          // creates the category AND selects it (C(K))
           setTimeout(function () {
-            var btns = Array.from(ri.parentElement.children).filter(
-              function (el) {
-                return el.tagName === "BUTTON";
-              },
+            ri.dispatchEvent(
+              new KeyboardEvent("keydown", {
+                key: "Enter",
+                code: "Enter",
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+              }),
             );
-            if (btns.length >= 1) btns[0].click();
             showSuccess(val);
-          }, 30);
+          }, 150);
         }
 
         cancelBtn.addEventListener("click", function () {
