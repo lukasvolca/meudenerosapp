@@ -302,9 +302,318 @@
         color: #fff;
       }
     </style>
+    <style>
+      /* ==========================================
+         Monthly Overview Widget
+         ========================================== */
+      #dn-overview-widget {
+        font-family: Inter, sans-serif;
+      }
+      #dn-overview-widget .dn-card {
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+      }
+      #dn-overview-widget .dn-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+      }
+      #dn-overview-widget .dn-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: hsl(0, 0%, 96%);
+      }
+      #dn-overview-widget .dn-link {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: hsl(142, 69%, 58%);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        transition: opacity 0.15s;
+      }
+      #dn-overview-widget .dn-link:hover { opacity: 0.75; }
+      #dn-overview-widget .dn-chart-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      #dn-overview-widget .dn-chart-center {
+        position: absolute;
+        text-align: center;
+        pointer-events: none;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #dn-overview-widget .dn-label {
+        font-size: 11px;
+        color: hsl(0, 0%, 50%);
+        margin-bottom: 2px;
+        white-space: nowrap;
+      }
+      #dn-overview-widget .dn-total {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: hsl(0, 0%, 96%);
+        white-space: nowrap;
+      }
+      #dn-overview-widget .dn-top-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      #dn-overview-widget .dn-cat-item {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      #dn-overview-widget .dn-cat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+      #dn-overview-widget .dn-cat-amount {
+        font-weight: 700;
+        font-size: 13px;
+        color: hsl(0, 0%, 96%);
+      }
+      #dn-overview-widget .dn-cat-name {
+        font-size: 11px;
+        color: hsl(0, 0%, 50%);
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 90px;
+      }
+      #dn-overview-widget .dn-empty {
+        text-align: center;
+        color: hsl(0, 0%, 50%);
+        font-size: 14px;
+        padding: 2rem 0;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      /* ==========================================
+         Monthly Overview Widget
+         ========================================== */
+      (function () {
+        "use strict";
+
+        var MONTH_NAMES = [
+          "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+          "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
+        ];
+        var PALETTE = [
+          "#4ade80","#fb923c","#60a5fa","#a78bfa","#f472b6",
+          "#facc15","#34d399","#f87171","#818cf8","#2dd4bf",
+        ];
+
+        function fmtBRL(n) {
+          return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        }
+
+        function getMonthData() {
+          var now = new Date();
+          var year = now.getFullYear();
+          var month = now.getMonth();
+          var transactions = [], categories = [];
+          try { transactions = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
+          try { categories = JSON.parse(localStorage.getItem("finance_categories") || "[]"); } catch (e) {}
+
+          var expenses = transactions.filter(function (t) {
+            if (t.type !== "expense") return false;
+            var d = new Date(t.date);
+            return d.getFullYear() === year && d.getMonth() === month;
+          });
+
+          var byCategory = {};
+          expenses.forEach(function (t) {
+            var id = t.categoryId || "__none__";
+            if (!byCategory[id]) {
+              var cat = categories.find(function (c) { return c.id === id; });
+              byCategory[id] = {
+                id: id,
+                name: (cat && cat.name) || t.categoryName || "Outros",
+                total: 0,
+              };
+            }
+            byCategory[id].total += t.amount;
+          });
+
+          var sorted = Object.values(byCategory).sort(function (a, b) {
+            return b.total - a.total;
+          });
+          var total = sorted.reduce(function (s, c) { return s + c.total; }, 0);
+          return { sorted: sorted, total: total, monthName: MONTH_NAMES[month] };
+        }
+
+        function polarXY(cx, cy, r, angleDeg) {
+          var rad = (angleDeg - 90) * Math.PI / 180;
+          return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+        }
+
+        function buildSVG(sorted, total) {
+          if (!total) return "";
+          var cx = 100, cy = 100, r = 70, sw = 22, gap = 2.5;
+          var currentAngle = 0;
+          var arcs = "";
+          sorted.forEach(function (seg, i) {
+            var pct = seg.total / total;
+            var sweep = pct * 360 - gap;
+            if (sweep <= 0) return;
+            var s = polarXY(cx, cy, r, currentAngle);
+            var e = polarXY(cx, cy, r, currentAngle + sweep);
+            var large = sweep > 180 ? 1 : 0;
+            arcs +=
+              '<path d="M ' + s[0].toFixed(2) + " " + s[1].toFixed(2) +
+              " A " + r + " " + r + " 0 " + large + " 1 " +
+              e[0].toFixed(2) + " " + e[1].toFixed(2) + '"' +
+              ' fill="none" stroke="' + PALETTE[i % PALETTE.length] + '"' +
+              ' stroke-width="' + sw + '" stroke-linecap="round"/>';
+            currentAngle += pct * 360;
+          });
+          return (
+            '<svg viewBox="0 0 200 200" width="184" height="184" style="display:block;flex-shrink:0;">' +
+            '<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
+            '" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="' + sw + '"/>' +
+            arcs + "</svg>"
+          );
+        }
+
+        function buildWidget() {
+          var data = getMonthData();
+          var sorted = data.sorted, total = data.total, monthName = data.monthName;
+          var top3 = sorted.slice(0, 3);
+          var svg = buildSVG(sorted, total);
+
+          var topHtml = top3
+            .map(function (cat, i) {
+              var color = PALETTE[i % PALETTE.length];
+              var init = cat.name.charAt(0).toUpperCase();
+              return (
+                '<div class="dn-cat-item">' +
+                '<div class="dn-cat-icon" style="background:' + color + '1a;border:1px solid ' + color + '33;color:' + color + ';">' +
+                init + "</div>" +
+                '<span class="dn-cat-amount">' + fmtBRL(cat.total) + "</span>" +
+                '<span class="dn-cat-name">' + cat.name + "</span>" +
+                "</div>"
+              );
+            })
+            .join("");
+
+          var body =
+            sorted.length === 0
+              ? '<p class="dn-empty">Nenhuma despesa registrada em ' + monthName + ".</p>"
+              : '<div class="dn-chart-wrap">' +
+                svg +
+                '<div class="dn-chart-center">' +
+                '<div class="dn-label">Total no mês</div>' +
+                '<div class="dn-total">' + fmtBRL(total) + "</div>" +
+                "</div></div>" +
+                (top3.length
+                  ? '<div class="dn-top-row">' + topHtml + "</div>"
+                  : "");
+
+          var el = document.createElement("div");
+          el.id = "dn-overview-widget";
+          el.innerHTML =
+            '<div class="glass-panel dn-card">' +
+            '<div class="dn-header">' +
+            '<h3 class="dn-title">Gastos de ' + monthName + "</h3>" +
+            '<button class="dn-link" id="dn-analyze-btn">' +
+            'Analisar <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+            "</button></div>" +
+            body +
+            "</div>";
+
+          el.querySelector("#dn-analyze-btn").addEventListener("click", function () {
+            history.pushState(null, "", "/categories");
+            window.dispatchEvent(new PopStateEvent("popstate"));
+          });
+
+          return el;
+        }
+
+        var _injecting = false;
+
+        function tryInject() {
+          if (_injecting) return;
+          if (document.getElementById("dn-overview-widget")) return;
+          var path = window.location.pathname;
+          if (path !== "/" && path !== "") return;
+
+          // Confirm we're on the dashboard by detecting "Atividade Recente"
+          var h3s = document.querySelectorAll("h3");
+          var recentHeader = null;
+          for (var i = 0; i < h3s.length; i++) {
+            if (h3s[i].textContent.trim() === "Atividade Recente") {
+              recentHeader = h3s[i];
+              break;
+            }
+          }
+          if (!recentHeader) return;
+
+          // Walk up to find the space-y-8 container
+          var container = recentHeader.parentElement;
+          while (container && !container.classList.contains("space-y-8")) {
+            container = container.parentElement;
+          }
+          if (!container || container.children.length < 2) return;
+
+          _injecting = true;
+          var widget = buildWidget();
+          // Insert between stat cards (index 0) and activity grid (index 1)
+          container.insertBefore(widget, container.children[1]);
+          _injecting = false;
+        }
+
+        function debounce(fn, ms) {
+          var t;
+          return function () {
+            clearTimeout(t);
+            t = setTimeout(fn, ms);
+          };
+        }
+
+        var debouncedInject = debounce(tryInject, 250);
+
+        // MutationObserver: re-inject if widget is removed (e.g., after SPA navigation back)
+        var observer = new MutationObserver(function () {
+          if (!document.getElementById("dn-overview-widget")) {
+            debouncedInject();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Initial inject after React renders
+        setTimeout(tryInject, 600);
+        setTimeout(tryInject, 1500);
+      })();
+    </script>
     <script>
       (function () {
         var ov = document.createElement("div");
@@ -981,7 +1290,12 @@
           if (pills.length === 0) return;
 
           // Don't rebuild while any pill is in React edit mode
-          if (pills.some(function (w) { return !w.querySelector(".group.relative"); })) return;
+          if (
+            pills.some(function (w) {
+              return !w.querySelector(".group.relative");
+            })
+          )
+            return;
 
           // Hide all native React sections via JS
           Array.from(cats8.children).forEach(function (ch) {
@@ -1118,7 +1432,7 @@
           var mainEl = cats8.closest("main") || document.querySelector("main");
           if (mainEl && !mainEl.contains(listEl)) {
             // Use cats8 as reference only if it's still a direct child of mainEl
-            var refNode = (cats8.parentNode === mainEl) ? cats8 : null;
+            var refNode = cats8.parentNode === mainEl ? cats8 : null;
             mainEl.insertBefore(listEl, refNode);
           }
           listEl.style.display = ""; // CSS controls: block on mobile, none on desktop
