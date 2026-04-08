@@ -104,11 +104,43 @@
         }
         /* Reduce transaction outer card padding */
         .glass-panel.rounded-3xl {
-          padding: 0.875rem !important;
+          padding: 0 !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
         }
-        /* Slightly more space between transaction rows */
-        .glass-panel.rounded-xl.p-4 {
-          padding: 0.875rem !important;
+        /* list-style items */
+        .glass-panel.rounded-xl.p-4.group {
+          padding: 0.85rem 0.25rem !important;
+          border-radius: 0 !important;
+          border: none !important;
+          background: transparent !important;
+          box-shadow: none !important;
+          border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+          border-left: none !important;
+        }
+        .glass-panel.rounded-xl.p-4.group:last-child {
+          border-bottom: none !important;
+        }
+        /* Hide the hover-only action buttons (handled by long-press modal) */
+        .glass-panel.rounded-xl.p-4.group .opacity-0 {
+          display: none !important;
+        }
+        /* Right side: amount top, type+category below */
+        .glass-panel.rounded-xl.p-4.group > div:last-child {
+          flex-direction: column !important;
+          align-items: flex-end !important;
+          gap: 0.2rem !important;
+          min-width: 0;
+        }
+        /* Amount text size */
+        .glass-panel.rounded-xl.p-4.group > div:last-child > span {
+          font-size: 0.9rem !important;
+          white-space: nowrap;
+        }
+        /* Section heading (date label) */
+        .space-y-6 > div > h4 {
+          padding: 0.5rem 0.25rem 0.25rem !important;
         }
       }
       @media (min-width: 768px) {
@@ -119,7 +151,80 @@
           display: none !important;
         }
       }
-    </style>
+      /* Long-press modal */
+      #lp-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        z-index: 9998;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+      }
+      #lp-modal.open { display: flex; }
+      #lp-modal-box {
+        background: #1c1c1e;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 1rem 1rem 0 0;
+        width: 100%;
+        max-width: 480px;
+        padding: 0.5rem 0 1rem;
+        box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+      }
+      #lp-modal-handle {
+        width: 2.5rem; height: 4px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 2px;
+        margin: 0.5rem auto 1rem;
+      }
+      #lp-modal-title {
+        color: rgba(255,255,255,0.5);
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0 1.25rem 0.75rem;
+      }
+      .lp-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        width: 100%;
+        padding: 0.9rem 1.25rem;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+        text-align: left;
+      }
+      .lp-btn:active { background: rgba(255,255,255,0.06); }
+      .lp-btn-icon {
+        width: 2.25rem; height: 2.25rem;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+      }
+      .lp-btn-del .lp-btn-icon { background: rgba(239,68,68,0.18); color: #ef4444; }
+      .lp-btn-edit .lp-btn-icon { background: rgba(255,255,255,0.1); color: #fff; }
+      #lp-confirm {
+        display: none;
+        padding: 1rem 1.25rem 0.5rem;
+      }
+      #lp-confirm p {
+        color: rgba(255,255,255,0.8);
+        font-size: 0.9rem;
+        margin: 0 0 1rem;
+      }
+      #lp-confirm-btns { display: flex; gap: 0.5rem; }
+      #lp-confirm-btns button {
+        flex: 1; padding: 0.75rem;
+        border-radius: 0.75rem; border: none;
+        font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      }
+      #lp-confirm-cancel { background: rgba(255,255,255,0.1); color: #fff; }
+      #lp-confirm-ok { background: #ef4444; color: #fff; }
   </head>
   <body>
     <div id="root"></div>
@@ -341,9 +446,7 @@
           if (window.innerWidth >= 768) return;
 
           // Abbreviate month: "abril 2026" → "abr 2026"
-          var span = document.querySelector(
-            "header.h-16 .rounded-full span",
-          );
+          var span = document.querySelector("header.h-16 .rounded-full span");
           if (span) {
             var txt = span.textContent.trim();
             if (txt.length > 8) {
@@ -353,13 +456,6 @@
             }
           }
 
-          // Make edit/delete buttons always visible on touch
-          document
-            .querySelectorAll(".rounded-xl.p-4.group")
-            .forEach(function (item) {
-              var d = item.querySelector(".opacity-0");
-              if (d) d.style.opacity = "1";
-            });
         }
 
         new MutationObserver(function () {
@@ -374,6 +470,99 @@
           subtree: true,
           characterData: true,
         });
+      })();
+    </script>
+    <script>
+      // Long-press (600ms) to edit/delete transaction on mobile
+      (function () {
+        if (window.innerWidth >= 768) return;
+
+        var modal = document.createElement("div");
+        modal.id = "lp-modal";
+        modal.innerHTML =
+          '<div id="lp-modal-box">' +
+          '<div id="lp-modal-handle"></div>' +
+          '<div id="lp-modal-title">O que deseja fazer?</div>' +
+          '<button class="lp-btn lp-btn-edit" id="lp-edit">' +
+          '<span class="lp-btn-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>' +
+          "Editar transa\u00e7\u00e3o</button>" +
+          '<button class="lp-btn lp-btn-del" id="lp-del">' +
+          '<span class="lp-btn-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></span>' +
+          "Excluir transa\u00e7\u00e3o</button>" +
+          '<div id="lp-confirm">' +
+          "<p>Tem certeza que quer excluir esta transa\u00e7\u00e3o?</p>" +
+          '<div id="lp-confirm-btns">' +
+          '<button id="lp-confirm-cancel">Cancelar</button>' +
+          '<button id="lp-confirm-ok">Excluir</button>' +
+          "</div></div></div>";
+        document.body.appendChild(modal);
+
+        var activeItem = null;
+        var pressTimer = null;
+        var pressing = false;
+
+        function closeModal() {
+          modal.classList.remove("open");
+          document.getElementById("lp-confirm").style.display = "none";
+          document.getElementById("lp-edit").style.display = "";
+          document.getElementById("lp-del").style.display = "";
+          document.getElementById("lp-modal-title").style.display = "";
+          activeItem = null;
+        }
+
+        function openModal(item) {
+          activeItem = item;
+          modal.classList.add("open");
+        }
+
+        document.getElementById("lp-edit").addEventListener("click", function () {
+          if (!activeItem) return;
+          var b = activeItem.querySelector('button[title="Editar"]');
+          closeModal();
+          if (b) setTimeout(function () { b.click(); }, 80);
+        });
+
+        document.getElementById("lp-del").addEventListener("click", function () {
+          document.getElementById("lp-edit").style.display = "none";
+          document.getElementById("lp-del").style.display = "none";
+          document.getElementById("lp-modal-title").style.display = "none";
+          document.getElementById("lp-confirm").style.display = "block";
+        });
+
+        document.getElementById("lp-confirm-ok").addEventListener("click", function () {
+          if (!activeItem) return;
+          var b = activeItem.querySelector('button[title="Excluir"]');
+          closeModal();
+          if (b) setTimeout(function () { b.click(); }, 80);
+        });
+
+        document.getElementById("lp-confirm-cancel").addEventListener("click", closeModal);
+
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) closeModal();
+        });
+
+        document.addEventListener("touchstart", function (e) {
+          var item = e.target.closest(".glass-panel.rounded-xl.p-4.group");
+          if (!item) return;
+          pressing = true;
+          pressTimer = setTimeout(function () {
+            if (pressing) {
+              openModal(item);
+              navigator.vibrate && navigator.vibrate(40);
+            }
+          }, 600);
+        }, { passive: true });
+
+        document.addEventListener("touchend", function () {
+          pressing = false;
+          clearTimeout(pressTimer);
+        }, { passive: true });
+
+        document.addEventListener("touchmove", function () {
+          pressing = false;
+          clearTimeout(pressTimer);
+        }, { passive: true });
       })();
     </script>
   </body>
