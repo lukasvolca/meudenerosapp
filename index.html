@@ -86,7 +86,8 @@
           overflow-x: hidden !important;
         }
         /* Fix flex child overflow */
-        .flex-1.ml-64, .flex-1 {
+        .flex-1.ml-64,
+        .flex-1 {
           min-width: 0;
         }
         header.h-16 {
@@ -229,14 +230,19 @@
           var ok = document.getElementById("cat-mod-ok");
           ok.textContent = "\u2713 \u201c" + val + "\u201d selecionada!";
           ok.style.display = "block";
+          // After 900ms start fading out the modal, revealing the form beneath
           setTimeout(function () {
-            ok.style.display = "none";
-            inp.style.display = "";
-            document.getElementById("cat-mod-actions").style.display = "";
-            closeModal(false);
-          }, 1400);
-        }
-
+            modEl.style.transition = "opacity 0.5s ease";
+            modEl.style.opacity = "0";
+            setTimeout(function () {
+              modEl.style.transition = "";
+              modEl.style.opacity = "";
+              ok.style.display = "none";
+              inp.style.display = "";
+              document.getElementById("cat-mod-actions").style.display = "";
+              closeModal(false);
+            }, 500);
+          }, 900);
         function submitModal() {
           var val = inp.value.trim();
           if (!val) {
