@@ -116,7 +116,7 @@
           border: none !important;
           background: transparent !important;
           box-shadow: none !important;
-          border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
           border-left: none !important;
         }
         .glass-panel.rounded-xl.p-4.group:last-child {
@@ -170,12 +170,14 @@
         align-items: center;
         gap: 0.875rem;
         padding: 0.8rem 0.25rem;
-        border-bottom: 1px solid rgba(255,255,255,0.07);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
         user-select: none;
       }
-      .cat-row:last-child { border-bottom: none; }
+      .cat-row:last-child {
+        border-bottom: none;
+      }
       .cat-row-right {
         margin-left: auto;
         text-align: right;
@@ -186,7 +188,7 @@
         font-weight: 500;
       }
       .cat-row-total {
-        color: rgba(255,255,255,0.55);
+        color: rgba(255, 255, 255, 0.55);
         font-size: 0.78rem;
         margin-top: 1px;
       }
@@ -195,7 +197,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: rgba(255,255,255,0.35);
+        color: rgba(255, 255, 255, 0.35);
         padding: 0 0.25rem 0.5rem;
       }
       /* Long-press modal */
@@ -203,30 +205,33 @@
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.6);
+        background: rgba(0, 0, 0, 0.6);
         z-index: 9998;
         align-items: flex-end;
         justify-content: center;
         padding-bottom: env(safe-area-inset-bottom, 0);
       }
-      #lp-modal.open { display: flex; }
+      #lp-modal.open {
+        display: flex;
+      }
       #lp-modal-box {
         background: #1c1c1e;
-        border: 1px solid rgba(255,255,255,0.12);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 1rem 1rem 0 0;
         width: 100%;
         max-width: 480px;
         padding: 0.5rem 0 1rem;
-        box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+        box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
       }
       #lp-modal-handle {
-        width: 2.5rem; height: 4px;
-        background: rgba(255,255,255,0.2);
+        width: 2.5rem;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.2);
         border-radius: 2px;
         margin: 0.5rem auto 1rem;
       }
       #lp-modal-title {
-        color: rgba(255,255,255,0.5);
+        color: rgba(255, 255, 255, 0.5);
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
@@ -246,32 +251,56 @@
         cursor: pointer;
         text-align: left;
       }
-      .lp-btn:active { background: rgba(255,255,255,0.06); }
+      .lp-btn:active {
+        background: rgba(255, 255, 255, 0.06);
+      }
       .lp-btn-icon {
-        width: 2.25rem; height: 2.25rem;
+        width: 2.25rem;
+        height: 2.25rem;
         border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
       }
-      .lp-btn-del .lp-btn-icon { background: rgba(239,68,68,0.18); color: #ef4444; }
-      .lp-btn-edit .lp-btn-icon { background: rgba(255,255,255,0.1); color: #fff; }
+      .lp-btn-del .lp-btn-icon {
+        background: rgba(239, 68, 68, 0.18);
+        color: #ef4444;
+      }
+      .lp-btn-edit .lp-btn-icon {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
       #lp-confirm {
         display: none;
         padding: 1rem 1.25rem 0.5rem;
       }
       #lp-confirm p {
-        color: rgba(255,255,255,0.8);
+        color: rgba(255, 255, 255, 0.8);
         font-size: 0.9rem;
         margin: 0 0 1rem;
       }
-      #lp-confirm-btns { display: flex; gap: 0.5rem; }
-      #lp-confirm-btns button {
-        flex: 1; padding: 0.75rem;
-        border-radius: 0.75rem; border: none;
-        font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      #lp-confirm-btns {
+        display: flex;
+        gap: 0.5rem;
       }
-      #lp-confirm-cancel { background: rgba(255,255,255,0.1); color: #fff; }
-      #lp-confirm-ok { background: #ef4444; color: #fff; }
+      #lp-confirm-btns button {
+        flex: 1;
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        border: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #lp-confirm-cancel {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+      #lp-confirm-ok {
+        background: #ef4444;
+        color: #fff;
+      }
     </style>
   </head>
   <body>
@@ -412,6 +441,7 @@
               closeModal(false);
             }, 500);
           }, 900);
+        }
         function submitModal() {
           var val = inp.value.trim();
           if (!val) {
@@ -503,7 +533,6 @@
                 span.textContent = p[0].slice(0, 3) + " " + p[1];
             }
           }
-
         }
 
         new MutationObserver(function () {
@@ -563,54 +592,80 @@
           modal.classList.add("open");
         }
 
-        document.getElementById("lp-edit").addEventListener("click", function () {
-          if (!activeItem) return;
-          var b = activeItem.querySelector('button[title="Editar"]');
-          closeModal();
-          if (b) setTimeout(function () { b.click(); }, 80);
-        });
+        document
+          .getElementById("lp-edit")
+          .addEventListener("click", function () {
+            if (!activeItem) return;
+            var b = activeItem.querySelector('button[title="Editar"]');
+            closeModal();
+            if (b)
+              setTimeout(function () {
+                b.click();
+              }, 80);
+          });
 
-        document.getElementById("lp-del").addEventListener("click", function () {
-          document.getElementById("lp-edit").style.display = "none";
-          document.getElementById("lp-del").style.display = "none";
-          document.getElementById("lp-modal-title").style.display = "none";
-          document.getElementById("lp-confirm").style.display = "block";
-        });
+        document
+          .getElementById("lp-del")
+          .addEventListener("click", function () {
+            document.getElementById("lp-edit").style.display = "none";
+            document.getElementById("lp-del").style.display = "none";
+            document.getElementById("lp-modal-title").style.display = "none";
+            document.getElementById("lp-confirm").style.display = "block";
+          });
 
-        document.getElementById("lp-confirm-ok").addEventListener("click", function () {
-          if (!activeItem) return;
-          var b = activeItem.querySelector('button[title="Excluir"]');
-          closeModal();
-          if (b) setTimeout(function () { b.click(); }, 80);
-        });
+        document
+          .getElementById("lp-confirm-ok")
+          .addEventListener("click", function () {
+            if (!activeItem) return;
+            var b = activeItem.querySelector('button[title="Excluir"]');
+            closeModal();
+            if (b)
+              setTimeout(function () {
+                b.click();
+              }, 80);
+          });
 
-        document.getElementById("lp-confirm-cancel").addEventListener("click", closeModal);
+        document
+          .getElementById("lp-confirm-cancel")
+          .addEventListener("click", closeModal);
 
         modal.addEventListener("click", function (e) {
           if (e.target === modal) closeModal();
         });
 
-        document.addEventListener("touchstart", function (e) {
-          var item = e.target.closest(".glass-panel.rounded-xl.p-4.group");
-          if (!item) return;
-          pressing = true;
-          pressTimer = setTimeout(function () {
-            if (pressing) {
-              openModal(item);
-              navigator.vibrate && navigator.vibrate(40);
-            }
-          }, 600);
-        }, { passive: true });
+        document.addEventListener(
+          "touchstart",
+          function (e) {
+            var item = e.target.closest(".glass-panel.rounded-xl.p-4.group");
+            if (!item) return;
+            pressing = true;
+            pressTimer = setTimeout(function () {
+              if (pressing) {
+                openModal(item);
+                navigator.vibrate && navigator.vibrate(40);
+              }
+            }, 600);
+          },
+          { passive: true },
+        );
 
-        document.addEventListener("touchend", function () {
-          pressing = false;
-          clearTimeout(pressTimer);
-        }, { passive: true });
+        document.addEventListener(
+          "touchend",
+          function () {
+            pressing = false;
+            clearTimeout(pressTimer);
+          },
+          { passive: true },
+        );
 
-        document.addEventListener("touchmove", function () {
-          pressing = false;
-          clearTimeout(pressTimer);
-        }, { passive: true });
+        document.addEventListener(
+          "touchmove",
+          function () {
+            pressing = false;
+            clearTimeout(pressTimer);
+          },
+          { passive: true },
+        );
       })();
     </script>
     <script>
@@ -664,38 +719,46 @@
           catModal.style.display = "flex";
         }
 
-        document.getElementById("cat-lp-edit").addEventListener("click", function () {
-          if (!activeCatItem) return;
-          var catId = activeCatItem.dataset.catId;
-          closeCatModal();
-          // Find the React edit button for this category pill
-          setTimeout(function () {
-            var pill = document.querySelector(
-              '[data-cat-pill="' + catId + '"] button[title="Editar"]',
-            );
-            if (pill) pill.click();
-          }, 80);
-        });
+        document
+          .getElementById("cat-lp-edit")
+          .addEventListener("click", function () {
+            if (!activeCatItem) return;
+            var catId = activeCatItem.dataset.catId;
+            closeCatModal();
+            // Find the React edit button for this category pill
+            setTimeout(function () {
+              var pill = document.querySelector(
+                '[data-cat-pill="' + catId + '"] button[title="Editar"]',
+              );
+              if (pill) pill.click();
+            }, 80);
+          });
 
-        document.getElementById("cat-lp-del").addEventListener("click", function () {
-          document.getElementById("cat-lp-edit").style.display = "none";
-          document.getElementById("cat-lp-del").style.display = "none";
-          document.getElementById("cat-lp-confirm").style.display = "block";
-        });
+        document
+          .getElementById("cat-lp-del")
+          .addEventListener("click", function () {
+            document.getElementById("cat-lp-edit").style.display = "none";
+            document.getElementById("cat-lp-del").style.display = "none";
+            document.getElementById("cat-lp-confirm").style.display = "block";
+          });
 
-        document.getElementById("cat-lp-ok").addEventListener("click", function () {
-          if (!activeCatItem) return;
-          var catId = activeCatItem.dataset.catId;
-          closeCatModal();
-          setTimeout(function () {
-            var pill = document.querySelector(
-              '[data-cat-pill="' + catId + '"] button[title="Excluir"]',
-            );
-            if (pill) pill.click();
-          }, 80);
-        });
+        document
+          .getElementById("cat-lp-ok")
+          .addEventListener("click", function () {
+            if (!activeCatItem) return;
+            var catId = activeCatItem.dataset.catId;
+            closeCatModal();
+            setTimeout(function () {
+              var pill = document.querySelector(
+                '[data-cat-pill="' + catId + '"] button[title="Excluir"]',
+              );
+              if (pill) pill.click();
+            }, 80);
+          });
 
-        document.getElementById("cat-lp-cancel").addEventListener("click", closeCatModal);
+        document
+          .getElementById("cat-lp-cancel")
+          .addEventListener("click", closeCatModal);
         catModal.addEventListener("click", function (e) {
           if (e.target === catModal) closeCatModal();
         });
@@ -706,7 +769,13 @@
         var catPressing = false;
 
         function formatBRL(n) {
-          return "R$ " + n.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+          return (
+            "R$ " +
+            n
+              .toFixed(2)
+              .replace(".", ",")
+              .replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+          );
         }
 
         function isOnCatPage() {
@@ -744,25 +813,38 @@
           }
 
           // Clear rows (keep title)
-          while (listEl.children.length > 1) listEl.removeChild(listEl.lastChild);
+          while (listEl.children.length > 1)
+            listEl.removeChild(listEl.lastChild);
 
           // Collect transaction totals per category from the stats in DOM
           // We'll read what React rendered in the transaction list section
           var totals = {};
-          document.querySelectorAll(".space-y-8 > div:last-child .glass-panel.rounded-xl.p-4.group").forEach(function (item) {
-            // Each item has categoryName text and amount
-            var catSpan = item.querySelector(".text-xs.text-muted-foreground");
-            var amountSpan = item.querySelector(".font-bold.font-display");
-            var isExpense = amountSpan && amountSpan.textContent.trim().startsWith("-") === false && item.querySelector(".text-destructive") !== null;
-            if (catSpan && amountSpan) {
-              var catName = catSpan.textContent.trim();
-              var amtText = amountSpan.textContent.replace(/[R$+\-\s]/g, "").replace(",", ".").replace(/\./g, function(m, o, s) {
-                return o < s.lastIndexOf(".") ? "" : ".";
-              });
-              var amt = parseFloat(amtText) || 0;
-              totals[catName] = (totals[catName] || 0) + amt;
-            }
-          });
+          document
+            .querySelectorAll(
+              ".space-y-8 > div:last-child .glass-panel.rounded-xl.p-4.group",
+            )
+            .forEach(function (item) {
+              // Each item has categoryName text and amount
+              var catSpan = item.querySelector(
+                ".text-xs.text-muted-foreground",
+              );
+              var amountSpan = item.querySelector(".font-bold.font-display");
+              var isExpense =
+                amountSpan &&
+                amountSpan.textContent.trim().startsWith("-") === false &&
+                item.querySelector(".text-destructive") !== null;
+              if (catSpan && amountSpan) {
+                var catName = catSpan.textContent.trim();
+                var amtText = amountSpan.textContent
+                  .replace(/[R$+\-\s]/g, "")
+                  .replace(",", ".")
+                  .replace(/\./g, function (m, o, s) {
+                    return o < s.lastIndexOf(".") ? "" : ".";
+                  });
+                var amt = parseFloat(amtText) || 0;
+                totals[catName] = (totals[catName] || 0) + amt;
+              }
+            });
 
           pills.forEach(function (wrapper) {
             // Find the group div (non-editing state)
@@ -777,7 +859,9 @@
 
             // Icon is the first child element of the name button
             var iconEl = nameBtn.firstElementChild;
-            var iconHtml = iconEl ? iconEl.outerHTML : '<span style="width:1.5rem;height:1.5rem;background:rgba(255,255,255,0.15);border-radius:50%;display:inline-block;"></span>';
+            var iconHtml = iconEl
+              ? iconEl.outerHTML
+              : '<span style="width:1.5rem;height:1.5rem;background:rgba(255,255,255,0.15);border-radius:50%;display:inline-block;"></span>';
 
             // Give the wrapper a data attribute for finding edit/delete buttons
             var catId = "cat-" + name.toLowerCase().replace(/\s+/g, "-");
@@ -793,31 +877,47 @@
               '<div style="flex-shrink:0;width:2.8rem;height:2.8rem;display:flex;align-items:center;justify-content:center;">' +
               iconHtml +
               "</div>" +
-              '<div class="cat-row-name">' + name + "</div>" +
+              '<div class="cat-row-name">' +
+              name +
+              "</div>" +
               '<div class="cat-row-right">' +
-              '<div class="cat-row-total">' + (total > 0 ? formatBRL(total) : "") + "</div>" +
+              '<div class="cat-row-total">' +
+              (total > 0 ? formatBRL(total) : "") +
+              "</div>" +
               "</div>";
 
             // Long-press on the row
-            row.addEventListener("touchstart", function (e) {
-              catPressing = true;
-              catPressTimer = setTimeout(function () {
-                if (catPressing) {
-                  openCatModal(row);
-                  navigator.vibrate && navigator.vibrate(40);
-                }
-              }, 600);
-            }, { passive: true });
+            row.addEventListener(
+              "touchstart",
+              function (e) {
+                catPressing = true;
+                catPressTimer = setTimeout(function () {
+                  if (catPressing) {
+                    openCatModal(row);
+                    navigator.vibrate && navigator.vibrate(40);
+                  }
+                }, 600);
+              },
+              { passive: true },
+            );
 
-            row.addEventListener("touchend", function () {
-              catPressing = false;
-              clearTimeout(catPressTimer);
-            }, { passive: true });
+            row.addEventListener(
+              "touchend",
+              function () {
+                catPressing = false;
+                clearTimeout(catPressTimer);
+              },
+              { passive: true },
+            );
 
-            row.addEventListener("touchmove", function () {
-              catPressing = false;
-              clearTimeout(catPressTimer);
-            }, { passive: true });
+            row.addEventListener(
+              "touchmove",
+              function () {
+                catPressing = false;
+                clearTimeout(catPressTimer);
+              },
+              { passive: true },
+            );
 
             listEl.appendChild(row);
           });
@@ -825,7 +925,9 @@
           // Inject list into main before the cats8 div (not inside it)
           var mainEl = cats8.closest("main") || document.querySelector("main");
           if (mainEl && !mainEl.contains(listEl)) {
-            mainEl.insertBefore(listEl, cats8);
+            // Use cats8 as reference only if it's still a direct child of mainEl
+            var refNode = (cats8.parentNode === mainEl) ? cats8 : null;
+            mainEl.insertBefore(listEl, refNode);
           }
           listEl.style.display = ""; // CSS controls: block on mobile, none on desktop
         }
