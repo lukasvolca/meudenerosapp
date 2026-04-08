@@ -68,6 +68,19 @@
     #mob-menu-btn { display: none !important; }
     #mob-overlay  { display: none !important; }
   }
+  @media (max-width: 767px) {
+    /* Nova categoria: row com 4 itens quebra linha no mobile */
+    div.flex.gap-2:has(input[placeholder="Nome da nova categoria"]) {
+      flex-wrap: wrap;
+    }
+    div.flex.gap-2:has(input[placeholder="Nome da nova categoria"]) input {
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+    div.flex.gap-2:has(input[placeholder="Nome da nova categoria"]) > div.flex-shrink-0 {
+      flex-shrink: 0;
+    }
+  }
 </style></head>
   <body>
     <div id="root"></div>
