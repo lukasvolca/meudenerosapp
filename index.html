@@ -1401,7 +1401,29 @@
                       if (fi) fi.click();
                     } else {
                       reactBtn.click();
-                      setTimeout(function () { cleanupAll(false); }, 200);
+                      // After icon selection React returns to edit view with new icon in state.
+                      // Press Enter on the input to trigger the save handler (q()).
+                      setTimeout(function () {
+                        var inp = cats8.querySelector(
+                          '[data-cat-pill="' + catId + '"] input',
+                        );
+                        if (inp) {
+                          inp.dispatchEvent(
+                            new KeyboardEvent("keydown", {
+                              key: "Enter",
+                              keyCode: 13,
+                              bubbles: true,
+                            }),
+                          );
+                        } else {
+                          // Fallback: click save button directly (.flex-col.gap-1.ml-1 first button)
+                          var saveBtn = cats8.querySelector(
+                            ".flex-col.gap-1.ml-1 button:first-child",
+                          );
+                          if (saveBtn) saveBtn.click();
+                        }
+                        setTimeout(function () { cleanupAll(false); }, 300);
+                      }, 300);
                     }
                   });
                   iconGrid.appendChild(myBtn);
