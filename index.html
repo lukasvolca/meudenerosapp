@@ -653,47 +653,45 @@
         function tryInject() {
           if (_injecting) return;
 
-          // Check widget existence AND content integrity
-          // (React reconciliation can corrupt the element in-place without removing it)
+          // Remove corrupted widget (id present but content gone)
           var existing = document.getElementById("dn-overview-widget");
           if (existing) {
-            if (existing.querySelector(".dn-card")) return; // intact
-            existing.remove(); // corrupted: remove before re-injecting
+            if (existing.querySelector(".dn-card")) return; // intact, nothing to do
+            existing.remove();
           }
 
           var path = window.location.pathname;
           if (path !== "/" && path !== "") return;
 
-          // Find "Atividade Recente" h3
-          var h3s = document.querySelectorAll("h3");
-          var recentH3 = null;
-          for (var i = 0; i < h3s.length; i++) {
-            if (h3s[i].textContent.trim() === "Atividade Recente") {
-              recentH3 = h3s[i];
+          // Strategy: find the "Saldo" stat card (unique to dashboard),
+          // walk up to its containing grid, and insert the widget right after that grid.
+          var panels = document.querySelectorAll(".glass-panel");
+          var statGrid = null;
+          for (var i = 0; i < panels.length; i++) {
+            var txt = panels[i].textContent || "";
+            if (txt.indexOf("Saldo") !== -1 && txt.indexOf("Entradas") === -1) {
+              // found a stat card — its parent is the 4-col grid
+              var g = panels[i].parentElement;
+              if (g && g.children.length >= 2) {
+                // parent has multiple stat cards → this IS the grid
+                statGrid = g;
+              } else if (g && g.parentElement && g.parentElement.children.length >= 2) {
+                // one level up
+                statGrid = g.parentElement;
+              }
               break;
             }
           }
-          if (!recentH3) return;
-
-          // Walk up from the h3 until we find a node that has a previousElementSibling.
-          // That sibling is the stat-cards grid, and the parent is the dashboard container.
-          // This avoids relying on any specific class name.
-          var activityEl = recentH3;
-          var dashboard = null;
-          for (var n = 0; n < 20; n++) {
-            var p = activityEl.parentElement;
-            if (!p) break;
-            if (activityEl.previousElementSibling) {
-              dashboard = p;
-              break;
-            }
-            activityEl = p;
-          }
-          if (!dashboard) return;
+          if (!statGrid) return;
 
           _injecting = true;
           var widget = buildWidget();
-          dashboard.insertBefore(widget, activityEl);
+          var after = statGrid.nextElementSibling;
+          if (after) {
+            statGrid.parentElement.insertBefore(widget, after);
+          } else {
+            statGrid.parentElement.appendChild(widget);
+          }
           _injecting = false;
         }
 
@@ -707,22 +705,22 @@
 
         var debouncedInject = debounce(tryInject, 200);
 
-        // MutationObserver: react to DOM changes.
-        // Checks BOTH for removal AND for in-place corruption (widget id present but .dn-card gone).
+        // MutationObserver: re-inject when widget disappears or is corrupted
         var observer = new MutationObserver(function () {
           var w = document.getElementById("dn-overview-widget");
-          var corrupted = w && !w.querySelector(".dn-card");
-          if (!w || corrupted) {
-            debouncedInject();
-          }
+          if (!w || !w.querySelector(".dn-card")) debouncedInject();
         });
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // Multiple staggered initial attempts to cover slow renders / SPA transitions
+        // Staggered initial attempts + long-running fallback
         setTimeout(tryInject, 400);
         setTimeout(tryInject, 900);
         setTimeout(tryInject, 1800);
         setTimeout(tryInject, 3500);
+        setInterval(function () {
+          var w = document.getElementById("dn-overview-widget");
+          if (!w || !w.querySelector(".dn-card")) tryInject();
+        }, 5000);
       })();
     </script>
     <script>
