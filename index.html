@@ -144,18 +144,7 @@
         }
 
         /* ===== CATEGORIES PAGE ===== */
-        /* Hide the pill filter bar entirely */
-        .space-y-8 > div:first-child {
-          display: none !important;
-        }
-        /* Hide stats grid */
-        .grid.grid-cols-1.md\:grid-cols-3 {
-          display: none !important;
-        }
-        /* Hide transaction history section in categories */
-        .space-y-8 > div:last-child.glass-panel {
-          display: none !important;
-        }
+        /* Native sections hidden via JS in buildCatList() */
       }
       @media (min-width: 768px) {
         #mob-menu-btn {
@@ -721,26 +710,32 @@
         }
 
         function isOnCatPage() {
-          // The categories page has .space-y-8 with 3 divs
-          return !!document.querySelector(".space-y-8");
+          // Only the categories page has .space-y-8 with a .glass-panel.space-y-4 inside
+          return !!document.querySelector(".space-y-8 .glass-panel.space-y-4");
         }
 
         function buildCatList() {
+          if (window.innerWidth >= 768) return;
           if (!isOnCatPage()) {
             if (listEl) listEl.style.display = "none";
             return;
           }
 
-          // Gather pills: each pill wrapper is a div > (editing div | group div)
-          // The "group relative" pills are the non-editing state
+          var cats8 = document.querySelector(".space-y-8");
+          if (!cats8) return;
+
+          // Gather pills: each pill wrapper is a div inside flex.flex-wrap.gap-2
           var pills = Array.from(
-            document.querySelectorAll(
-              '.space-y-8 .flex.flex-wrap.gap-2 > div',
-            ),
+            cats8.querySelectorAll(".flex.flex-wrap.gap-2 > div"),
           );
 
-          // Skip if pills not rendered yet or only "Todas" btn present
+          // Skip if pills not rendered yet
           if (pills.length === 0) return;
+
+          // Hide all native React sections via JS
+          Array.from(cats8.children).forEach(function (ch) {
+            ch.style.display = "none";
+          });
 
           if (!listEl) {
             listEl = document.createElement("div");
@@ -780,9 +775,9 @@
             var name = nameBtn.textContent.trim();
             if (!name) return;
 
-            // Get the icon element (first button in group)
-            var iconBtn = groupDiv.querySelector("button.flex-shrink-0");
-            var iconHtml = iconBtn ? iconBtn.innerHTML : '<span style="width:2.8rem;height:2.8rem;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border-radius:50%;"></span>';
+            // Icon is the first child element of the name button
+            var iconEl = nameBtn.firstElementChild;
+            var iconHtml = iconEl ? iconEl.outerHTML : '<span style="width:1.5rem;height:1.5rem;background:rgba(255,255,255,0.15);border-radius:50%;display:inline-block;"></span>';
 
             // Give the wrapper a data attribute for finding edit/delete buttons
             var catId = "cat-" + name.toLowerCase().replace(/\s+/g, "-");
@@ -827,12 +822,12 @@
             listEl.appendChild(row);
           });
 
-          // Inject list into page if not already
-          var container = document.querySelector(".space-y-8");
-          if (container && !container.contains(listEl)) {
-            container.insertBefore(listEl, container.firstChild);
+          // Inject list into main before the cats8 div (not inside it)
+          var mainEl = cats8.closest("main") || document.querySelector("main");
+          if (mainEl && !mainEl.contains(listEl)) {
+            mainEl.insertBefore(listEl, cats8);
           }
-          listEl.style.display = "block";
+          listEl.style.display = ""; // CSS controls: block on mobile, none on desktop
         }
 
         // Watch DOM for category page rendering
