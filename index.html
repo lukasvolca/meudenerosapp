@@ -724,19 +724,11 @@
           .addEventListener("click", function () {
             if (!activeCatItem) return;
             var catId = activeCatItem.dataset.catId;
+            var catName = activeCatItem.dataset.name;
             closeCatModal();
-            // Find the React edit button for this category pill
             setTimeout(function () {
-              var pill = document.querySelector(
-                '[data-cat-pill="' + catId + '"] button[title="Editar"]',
-              );
-              if (pill) pill.click();
-            }, 80);
-          });
-
-        document
-          .getElementById("cat-lp-del")
-          .addEventListener("click", function () {
+              openRenameModal(catId, catName);
+            }, 200);
             document.getElementById("cat-lp-edit").style.display = "none";
             document.getElementById("cat-lp-del").style.display = "none";
             document.getElementById("cat-lp-confirm").style.display = "block";
@@ -763,10 +755,121 @@
           if (e.target === catModal) closeCatModal();
         });
 
+        // ---- Rename modal ----
+        var renameModal = document.createElement("div");
+        renameModal.style.cssText =
+          "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);" +
+          "z-index:9999;align-items:center;justify-content:center;padding:1.5rem;";
+        renameModal.innerHTML =
+          '<div style="background:#1c1c1e;border:1px solid rgba(255,255,255,0.12);' +
+          "border-radius:1.25rem;width:100%;max-width:360px;padding:1.5rem;" +
+          'box-sizing:border-box;">' +
+          '<p style="color:rgba(255,255,255,0.5);font-size:0.7rem;font-weight:700;' +
+          'text-transform:uppercase;letter-spacing:0.08em;margin:0 0 0.75rem;">Renomear categoria</p>' +
+          '<input id="rename-inp" type="text" style="width:100%;background:rgba(255,255,255,0.06);' +
+          "border:1px solid rgba(255,255,255,0.12);border-radius:0.75rem;" +
+          "padding:0.75rem 1rem;color:#fff;font-size:1rem;outline:none;" +
+          'box-sizing:border-box;margin-bottom:1rem;" />' +
+          '<div style="display:flex;gap:0.5rem;">' +
+          '<button id="rename-cancel" style="flex:1;padding:0.75rem;' +
+          "background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);" +
+          'border-radius:0.75rem;color:#aaa;font-size:0.875rem;cursor:pointer;">Cancelar</button>' +
+          '<button id="rename-save" style="flex:1;padding:0.75rem;' +
+          "background:#22c55e;border:none;border-radius:0.75rem;" +
+          'color:#000;font-size:0.875rem;font-weight:700;cursor:pointer;">Salvar</button>' +
+          "</div></div>";
+        document.body.appendChild(renameModal);
+
+        var renameCatId = null;
+        function openRenameModal(catId, currentName) {
+          renameCatId = catId;
+          var inp = document.getElementById("rename-inp");
+          inp.value = currentName;
+          renameModal.style.display = "flex";
+          setTimeout(function () {
+            inp.focus();
+            inp.select();
+          }, 50);
+        }
+        function closeRenameModal() {
+          renameModal.style.display = "none";
+          renameCatId = null;
+        }
+        function saveRename() {
+          var newName = document.getElementById("rename-inp").value.trim();
+          if (!newName) return;
+          var catId = renameCatId;
+          closeRenameModal();
+          // Optimistic UI update
+          if (listEl) {
+            var row = listEl.querySelector('[data-cat-id="' + catId + '"]');
+            if (row) {
+              var nameEl = row.querySelector(".cat-row-name");
+              if (nameEl) nameEl.textContent = newName;
+              row.dataset.name = newName;
+            }
+          }
+          // Submit via React's hidden edit flow
+          observerPaused = true;
+          setTimeout(function () {
+            var editBtn = document.querySelector(
+              '[data-cat-pill="' + catId + '"] button[title="Editar"]',
+            );
+            if (!editBtn) {
+              observerPaused = false;
+              return;
+            }
+            editBtn.click();
+            setTimeout(function () {
+              var input = document.querySelector(
+                '[data-cat-pill="' + catId + '"] input',
+              );
+              if (!input) {
+                observerPaused = false;
+                return;
+              }
+              var setter = Object.getOwnPropertyDescriptor(
+                HTMLInputElement.prototype,
+                "value",
+              ).set;
+              setter.call(input, newName);
+              input.dispatchEvent(new Event("input", { bubbles: true }));
+              setTimeout(function () {
+                input.dispatchEvent(
+                  new KeyboardEvent("keydown", {
+                    key: "Enter",
+                    keyCode: 13,
+                    bubbles: true,
+                  }),
+                );
+                setTimeout(function () {
+                  observerPaused = false;
+                }, 300);
+              }, 150);
+            }, 100);
+          }, 100);
+        }
+        document
+          .getElementById("rename-cancel")
+          .addEventListener("click", closeRenameModal);
+        document
+          .getElementById("rename-save")
+          .addEventListener("click", saveRename);
+        document
+          .getElementById("rename-inp")
+          .addEventListener("keydown", function (e) {
+            if (e.key === "Enter") saveRename();
+            if (e.key === "Escape") closeRenameModal();
+          });
+        renameModal.addEventListener("click", function (e) {
+          if (e.target === renameModal) closeRenameModal();
+        });
+
         // ---- Build / refresh category list ----
         var listEl = null;
         var catPressTimer = null;
         var catPressing = false;
+        var observerPaused = false;
 
         function formatBRL(n) {
           return (
@@ -785,6 +888,7 @@
 
         function buildCatList() {
           if (window.innerWidth >= 768) return;
+          if (observerPaused) return;
           if (!isOnCatPage()) {
             if (listEl) listEl.style.display = "none";
             return;
@@ -800,6 +904,9 @@
 
           // Skip if pills not rendered yet
           if (pills.length === 0) return;
+
+          // Don't rebuild while any pill is in React edit mode
+          if (pills.some(function (w) { return !w.querySelector(".group.relative"); })) return;
 
           // Hide all native React sections via JS
           Array.from(cats8.children).forEach(function (ch) {
@@ -857,11 +964,12 @@
             var name = nameBtn.textContent.trim();
             if (!name) return;
 
-            // Icon is the first child element of the name button
-            var iconEl = nameBtn.firstElementChild;
+            // Icon is in the dedicated icon button (flex-shrink-0 p-2)
+            var iconBtn = groupDiv.querySelector("button.flex-shrink-0");
+            var iconEl = iconBtn ? iconBtn.firstElementChild : null;
             var iconHtml = iconEl
               ? iconEl.outerHTML
-              : '<span style="width:1.5rem;height:1.5rem;background:rgba(255,255,255,0.15);border-radius:50%;display:inline-block;"></span>';
+              : '<div style="width:2.5rem;height:2.5rem;border-radius:0.75rem;background:rgba(255,255,255,0.1);"></div>';
 
             // Give the wrapper a data attribute for finding edit/delete buttons
             var catId = "cat-" + name.toLowerCase().replace(/\s+/g, "-");
@@ -874,7 +982,7 @@
             row.dataset.catId = catId;
             row.dataset.name = name;
             row.innerHTML =
-              '<div style="flex-shrink:0;width:2.8rem;height:2.8rem;display:flex;align-items:center;justify-content:center;">' +
+              '<div style="flex-shrink:0;width:2.5rem;height:2.5rem;border-radius:0.75rem;overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
               iconHtml +
               "</div>" +
               '<div class="cat-row-name">' +
