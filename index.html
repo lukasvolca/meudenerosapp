@@ -652,32 +652,48 @@
 
         function tryInject() {
           if (_injecting) return;
-          if (document.getElementById("dn-overview-widget")) return;
+
+          // Check widget existence AND content integrity
+          // (React reconciliation can corrupt the element in-place without removing it)
+          var existing = document.getElementById("dn-overview-widget");
+          if (existing) {
+            if (existing.querySelector(".dn-card")) return; // intact
+            existing.remove(); // corrupted: remove before re-injecting
+          }
+
           var path = window.location.pathname;
           if (path !== "/" && path !== "") return;
 
-          // Confirm we're on the dashboard by detecting "Atividade Recente"
+          // Find "Atividade Recente" h3
           var h3s = document.querySelectorAll("h3");
-          var recentHeader = null;
+          var recentH3 = null;
           for (var i = 0; i < h3s.length; i++) {
             if (h3s[i].textContent.trim() === "Atividade Recente") {
-              recentHeader = h3s[i];
+              recentH3 = h3s[i];
               break;
             }
           }
-          if (!recentHeader) return;
+          if (!recentH3) return;
 
-          // Walk up to find the space-y-8 container
-          var container = recentHeader.parentElement;
-          while (container && !container.classList.contains("space-y-8")) {
-            container = container.parentElement;
+          // Walk up from the h3 until we find a node that has a previousElementSibling.
+          // That sibling is the stat-cards grid, and the parent is the dashboard container.
+          // This avoids relying on any specific class name.
+          var activityEl = recentH3;
+          var dashboard = null;
+          for (var n = 0; n < 20; n++) {
+            var p = activityEl.parentElement;
+            if (!p) break;
+            if (activityEl.previousElementSibling) {
+              dashboard = p;
+              break;
+            }
+            activityEl = p;
           }
-          if (!container || container.children.length < 2) return;
+          if (!dashboard) return;
 
           _injecting = true;
           var widget = buildWidget();
-          // Insert between stat cards (index 0) and activity grid (index 1)
-          container.insertBefore(widget, container.children[1]);
+          dashboard.insertBefore(widget, activityEl);
           _injecting = false;
         }
 
@@ -689,19 +705,24 @@
           };
         }
 
-        var debouncedInject = debounce(tryInject, 250);
+        var debouncedInject = debounce(tryInject, 200);
 
-        // MutationObserver: re-inject if widget is removed (e.g., after SPA navigation back)
+        // MutationObserver: react to DOM changes.
+        // Checks BOTH for removal AND for in-place corruption (widget id present but .dn-card gone).
         var observer = new MutationObserver(function () {
-          if (!document.getElementById("dn-overview-widget")) {
+          var w = document.getElementById("dn-overview-widget");
+          var corrupted = w && !w.querySelector(".dn-card");
+          if (!w || corrupted) {
             debouncedInject();
           }
         });
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // Initial inject after React renders
-        setTimeout(tryInject, 600);
-        setTimeout(tryInject, 1500);
+        // Multiple staggered initial attempts to cover slow renders / SPA transitions
+        setTimeout(tryInject, 400);
+        setTimeout(tryInject, 900);
+        setTimeout(tryInject, 1800);
+        setTimeout(tryInject, 3500);
       })();
     </script>
     <script>
