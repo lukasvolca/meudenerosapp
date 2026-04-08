@@ -871,6 +871,81 @@
         var catPressing = false;
         var observerPaused = false;
 
+        // ---- Icon picker overlay ----
+        function openIconPicker(catId) {
+          var cats8 = document.querySelector(".space-y-8");
+          if (!cats8) return;
+          observerPaused = true;
+
+          // Make cats8 a fixed full-screen overlay so React's inline icon picker is visible
+          cats8.style.cssText =
+            "position:fixed;inset:0;z-index:9990;overflow-y:auto;" +
+            "background:rgba(0,0,0,0.95);padding:1rem;display:block;box-sizing:border-box;";
+          Array.from(cats8.children).forEach(function (ch) {
+            ch.style.display = "";
+          });
+
+          // Close button
+          var closeBtn = document.createElement("button");
+          closeBtn.id = "icon-ov-close";
+          closeBtn.style.cssText =
+            "display:block;margin:0 0 1rem auto;padding:0.5rem 0.75rem;" +
+            "background:rgba(255,255,255,0.08);border:none;border-radius:0.5rem;" +
+            "color:#fff;font-size:0.875rem;cursor:pointer;";
+          closeBtn.textContent = "✕ Fechar";
+          cats8.insertBefore(closeBtn, cats8.firstChild);
+
+          function closeIconOverlay() {
+            var cb = document.getElementById("icon-ov-close");
+            if (cb) cb.remove();
+            cats8.style.cssText = "";
+            Array.from(cats8.children).forEach(function (ch) {
+              ch.style.display = "none";
+            });
+            observerPaused = false;
+            setTimeout(buildCatList, 200);
+          }
+
+          closeBtn.addEventListener("click", function () {
+            // Cancel edit mode first
+            var cancelEditBtn = cats8.querySelector(
+              '[data-cat-pill="' + catId + '"] .flex-col button:last-child',
+            );
+            if (cancelEditBtn) cancelEditBtn.click();
+            setTimeout(closeIconOverlay, 100);
+          });
+
+          // Click Editar to enter edit mode
+          var editBtn = cats8.querySelector(
+            '[data-cat-pill="' + catId + '"] button[title="Editar"]',
+          );
+          if (!editBtn) {
+            closeIconOverlay();
+            return;
+          }
+          editBtn.click();
+
+          // Then click Alterar ícone
+          setTimeout(function () {
+            var iconAlterBtn = cats8.querySelector(
+              '[data-cat-pill="' + catId + '"] button[title="Alterar ícone"]',
+            );
+            if (iconAlterBtn) iconAlterBtn.click();
+
+            // Auto-close when edit mode ends (input disappears)
+            var pickerObs = new MutationObserver(function () {
+              var inp = cats8.querySelector(
+                '[data-cat-pill="' + catId + '"] input',
+              );
+              if (!inp) {
+                pickerObs.disconnect();
+                closeIconOverlay();
+              }
+            });
+            pickerObs.observe(cats8, { childList: true, subtree: true });
+          }, 150);
+        }
+
         function formatBRL(n) {
           return (
             "R$ " +
@@ -982,7 +1057,7 @@
             row.dataset.catId = catId;
             row.dataset.name = name;
             row.innerHTML =
-              '<div style="flex-shrink:0;width:2.5rem;height:2.5rem;border-radius:0.75rem;overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
+              '<div class="cat-row-icon" style="flex-shrink:0;width:2.5rem;height:2.5rem;border-radius:0.75rem;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;">' +
               iconHtml +
               "</div>" +
               '<div class="cat-row-name">' +
@@ -993,6 +1068,15 @@
               (total > 0 ? formatBRL(total) : "") +
               "</div>" +
               "</div>";
+
+            // Tap icon to change it
+            var iconDiv = row.querySelector(".cat-row-icon");
+            if (iconDiv) {
+              iconDiv.addEventListener("click", function (e) {
+                e.stopPropagation();
+                openIconPicker(catId);
+              });
+            }
 
             // Long-press on the row
             row.addEventListener(
