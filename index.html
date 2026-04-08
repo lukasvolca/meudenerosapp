@@ -94,6 +94,22 @@
           padding-left: 56px !important;
           padding-right: 1rem !important;
         }
+        /* Month nav: fit abbreviated text */
+        header.h-16 .rounded-full span {
+          min-width: 0 !important;
+        }
+        /* Transaction items: tighter gap when buttons are visible */
+        .rounded-xl.p-4.group > div:last-child {
+          gap: 0.375rem !important;
+        }
+        /* Reduce transaction outer card padding */
+        .glass-panel.rounded-3xl {
+          padding: 0.875rem !important;
+        }
+        /* Slightly more space between transaction rows */
+        .glass-panel.rounded-xl.p-4 {
+          padding: 0.875rem !important;
+        }
       }
       @media (min-width: 768px) {
         #mob-menu-btn {
@@ -315,6 +331,49 @@
           }
         });
         obs.observe(document.body, { childList: true, subtree: true });
+      })();
+    </script>
+    <script>
+      (function () {
+        var pending = false;
+
+        function run() {
+          if (window.innerWidth >= 768) return;
+
+          // Abbreviate month: "abril 2026" → "abr 2026"
+          var span = document.querySelector(
+            "header.h-16 .rounded-full span",
+          );
+          if (span) {
+            var txt = span.textContent.trim();
+            if (txt.length > 8) {
+              var p = txt.split(" ");
+              if (p.length === 2)
+                span.textContent = p[0].slice(0, 3) + " " + p[1];
+            }
+          }
+
+          // Make edit/delete buttons always visible on touch
+          document
+            .querySelectorAll(".rounded-xl.p-4.group")
+            .forEach(function (item) {
+              var d = item.querySelector(".opacity-0");
+              if (d) d.style.opacity = "1";
+            });
+        }
+
+        new MutationObserver(function () {
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(function () {
+            pending = false;
+            run();
+          });
+        }).observe(document.body, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+        });
       })();
     </script>
   </body>
