@@ -1270,7 +1270,7 @@
         var catPressing = false;
         var observerPaused = false;
 
-        // ---- Icon picker overlay ----
+        // ---- Icon picker modal ----
         function openIconPicker(catId) {
           var cats8 = document.querySelector(".space-y-8");
           if (!cats8) return;
@@ -1278,41 +1278,22 @@
           if (!filterPanel) return;
           observerPaused = true;
 
-          // Backdrop overlay
-          var backdrop = document.createElement("div");
-          backdrop.id = "icon-ov-backdrop";
-          backdrop.style.cssText =
-            "position:fixed;inset:0;z-index:9989;background:rgba(0,0,0,0.7);";
-          document.body.appendChild(backdrop);
-
-          // Position filterPanel as a bottom-sheet — visible but only showing the picker
+          // Render React panel completely off-screen so _B can render
           cats8.style.cssText =
-            "position:fixed;bottom:0;left:0;right:0;z-index:9990;" +
-            "display:block;pointer-events:none;";
-          filterPanel.style.cssText =
-            "position:relative;z-index:9990;border-radius:1rem 1rem 0 0;" +
-            "padding:1rem;pointer-events:auto;max-height:80vh;overflow-y:auto;";
-          // Hide everything in filterPanel initially
-          Array.from(filterPanel.children).forEach(function (ch) {
-            ch.style.visibility = "hidden";
-            ch.style.height = "0";
-            ch.style.overflow = "hidden";
-            ch.style.margin = "0";
-            ch.style.padding = "0";
+            "position:fixed;left:-9999px;top:0;width:420px;display:block;visibility:hidden;";
+          Array.from(cats8.children).forEach(function (ch) {
+            ch.style.display = "";
           });
 
-          function closeIconOverlay() {
-            var bd = document.getElementById("icon-ov-backdrop");
-            if (bd) bd.remove();
-            // Restore filterPanel children
-            Array.from(filterPanel.children).forEach(function (ch) {
-              ch.style.visibility = "";
-              ch.style.height = "";
-              ch.style.overflow = "";
-              ch.style.margin = "";
-              ch.style.padding = "";
-            });
-            filterPanel.style.cssText = "";
+          function cancelRedactAndClose() {
+            // Cancel React edit mode
+            var cancelBtn = cats8.querySelector(
+              ".flex-col.gap-1 button:last-child",
+            );
+            if (cancelBtn) cancelBtn.click();
+          }
+
+          function cleanupReact() {
             cats8.style.cssText = "";
             Array.from(cats8.children).forEach(function (ch) {
               ch.style.display = "none";
@@ -1321,63 +1302,102 @@
             setTimeout(buildCatList, 200);
           }
 
-          backdrop.addEventListener("click", function () {
-            var cancelBtn = cats8.querySelector(
-              ".flex-col button:last-child[class*='rounded-lg']",
-            );
-            if (cancelBtn) cancelBtn.click();
-            setTimeout(closeIconOverlay, 80);
+          // Build our own modal
+          var modalOv = document.createElement("div");
+          modalOv.style.cssText =
+            "position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,0.65);" +
+            "display:flex;align-items:flex-end;justify-content:center;";
+          var modalBox = document.createElement("div");
+          modalBox.style.cssText =
+            "background:#1c1c1e;border:1px solid rgba(255,255,255,0.12);" +
+            "border-radius:1.25rem 1.25rem 0 0;width:100%;max-width:480px;" +
+            "padding:1rem;box-sizing:border-box;max-height:80vh;overflow-y:auto;";
+          modalBox.innerHTML =
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">' +
+            '<p style="color:rgba(255,255,255,0.5);font-size:0.7rem;font-weight:700;' +
+            'text-transform:uppercase;letter-spacing:0.08em;margin:0;">Escolher \u00edcone</p>' +
+            '<button id="icon-modal-close" style="background:none;border:none;color:rgba(255,255,255,0.5);' +
+            'font-size:1.2rem;cursor:pointer;padding:0.25rem;line-height:1;">\u00d7</button>' +
+            "</div>" +
+            '<div id="icon-modal-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;"></div>';
+          modalOv.appendChild(modalBox);
+          document.body.appendChild(modalOv);
+
+          var iconGrid = document.getElementById("icon-modal-grid");
+
+          function closeIconModal(andCancel) {
+            if (andCancel) cancelRedactAndClose();
+            modalOv.remove();
+            cleanupReact();
+          }
+
+          document.getElementById("icon-modal-close").addEventListener("click", function () {
+            closeIconModal(true);
+          });
+          modalOv.addEventListener("click", function (e) {
+            if (e.target === modalOv) closeIconModal(true);
           });
 
-          // Enter edit mode
+          // Enter React edit mode then open picker
           var editBtn = cats8.querySelector(
             '[data-cat-pill="' + catId + '"] button[title="Editar"]',
           );
-          if (!editBtn) { closeIconOverlay(); return; }
+          if (!editBtn) { closeIconModal(false); return; }
           editBtn.click();
 
-          // Then click Alterar ícone
           setTimeout(function () {
-            var iconAlterBtn = cats8.querySelector(
-              'button[title="Alterar ícone"]',
-            );
+            var iconAlterBtn = cats8.querySelector('button[title="Alterar \u00edcone"]');
             if (iconAlterBtn) iconAlterBtn.click();
 
-            // Wait for _B picker to render, then show only it
+            // Poll until _B grid appears in the off-screen panel, then clone buttons
             var waitCount = 0;
             var waitTimer = setInterval(function () {
               waitCount++;
-              // _B is the last child of filterPanel when it appears (has a grid inside)
-              var picker = filterPanel.lastElementChild;
-              var prevPicker = picker && picker.previousElementSibling;
-              var isPickerRendered = picker && prevPicker &&
-                picker !== prevPicker &&
-                picker.querySelector(".grid");
-              if (isPickerRendered || waitCount > 20) {
+              var reactGrid = filterPanel.querySelector(".grid");
+              if (reactGrid || waitCount > 25) {
                 clearInterval(waitTimer);
-                if (!isPickerRendered) { closeIconOverlay(); return; }
-                // Hide header and pills, reveal only the picker
-                Array.from(filterPanel.children).forEach(function (ch) {
-                  if (ch === picker) {
-                    ch.style.visibility = "";
-                    ch.style.height = "";
-                    ch.style.overflow = "";
-                    ch.style.margin = "";
-                    ch.style.padding = "";
+                if (!reactGrid) { closeIconModal(false); return; }
+
+                // Clone each button (SVG included) and wire up click → React button click
+                Array.from(reactGrid.children).forEach(function (reactBtn) {
+                  var myBtn = document.createElement("button");
+                  myBtn.style.cssText =
+                    "width:2.5rem;height:2.5rem;border-radius:0.625rem;border:none;" +
+                    "background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);" +
+                    "display:flex;align-items:center;justify-content:center;cursor:pointer;" +
+                    "padding:0;";
+                  myBtn.innerHTML = reactBtn.innerHTML;
+                  // Scale SVG to fit
+                  var svg = myBtn.querySelector("svg");
+                  if (svg) {
+                    svg.style.width = "1.1rem";
+                    svg.style.height = "1.1rem";
                   }
-                  // else stays hidden
+                  // Check if image upload button
+                  var isUpload = reactBtn.querySelector("input[type=file]") !== null ||
+                    (reactBtn.getAttribute("title") || "").toLowerCase().indexOf("imagem") >= 0;
+                  myBtn.addEventListener("click", function () {
+                    if (isUpload) {
+                      // Delegate to React's file input
+                      var fileInp = filterPanel.querySelector("input[type=file]");
+                      if (fileInp) fileInp.click();
+                    } else {
+                      reactBtn.click();
+                      // Wait for React to exit edit mode then close
+                      setTimeout(function () { closeIconModal(false); }, 150);
+                    }
+                  });
+                  iconGrid.appendChild(myBtn);
                 });
               }
             }, 80);
 
-            // When edit mode ends (user picked icon → React exits edit), close
+            // Also watch for React exiting edit mode (e.g. user pressed save from hidden UI)
             var pickerObs = new MutationObserver(function () {
-              var inp = cats8.querySelector(
-                '[data-cat-pill="' + catId + '"] input',
-              );
+              var inp = cats8.querySelector('[data-cat-pill="' + catId + '"] input');
               if (!inp) {
                 pickerObs.disconnect();
-                closeIconOverlay();
+                if (document.body.contains(modalOv)) closeIconModal(false);
               }
             });
             pickerObs.observe(cats8, { childList: true, subtree: true });
