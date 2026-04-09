@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -648,79 +648,74 @@
           return el;
         }
 
+        /* --------------------------------------------------
+           Injection: insert directly into <main> as a sibling
+           of React's AnimatePresence output so React's
+           reconciler never touches it.
+        -------------------------------------------------- */
+
+        function getMain() {
+          return document.querySelector("main.overflow-y-auto") ||
+                 document.querySelector("main");
+        }
+
+        function onDashboard() {
+          var p = window.location.pathname;
+          return p === "/" || p === "";
+        }
+
         var _injecting = false;
 
         function tryInject() {
           if (_injecting) return;
 
-          // Remove corrupted widget (id present but content gone)
+          if (!onDashboard()) {
+            var dead = document.getElementById("dn-overview-widget");
+            if (dead) dead.remove();
+            return;
+          }
+
           var existing = document.getElementById("dn-overview-widget");
-          if (existing) {
-            if (existing.querySelector(".dn-card")) return; // intact, nothing to do
-            existing.remove();
-          }
+          if (existing && existing.querySelector(".dn-card")) return;
+          if (existing) existing.remove();
 
-          var path = window.location.pathname;
-          if (path !== "/" && path !== "") return;
-
-          // Strategy: find the "Saldo" stat card (unique to dashboard),
-          // walk up to its containing grid, and insert the widget right after that grid.
-          var panels = document.querySelectorAll(".glass-panel");
-          var statGrid = null;
-          for (var i = 0; i < panels.length; i++) {
-            var txt = panels[i].textContent || "";
-            if (txt.indexOf("Saldo") !== -1 && txt.indexOf("Entradas") === -1) {
-              // found a stat card — its parent is the 4-col grid
-              var g = panels[i].parentElement;
-              if (g && g.children.length >= 2) {
-                // parent has multiple stat cards → this IS the grid
-                statGrid = g;
-              } else if (g && g.parentElement && g.parentElement.children.length >= 2) {
-                // one level up
-                statGrid = g.parentElement;
-              }
-              break;
-            }
-          }
-          if (!statGrid) return;
+          var main = getMain();
+          if (!main || !main.firstElementChild) return;
 
           _injecting = true;
           var widget = buildWidget();
-          var after = statGrid.nextElementSibling;
-          if (after) {
-            statGrid.parentElement.insertBefore(widget, after);
-          } else {
-            statGrid.parentElement.appendChild(widget);
-          }
+          // Insert before React's div — outside the React fiber tree
+          main.insertBefore(widget, main.firstElementChild);
           _injecting = false;
         }
 
         function debounce(fn, ms) {
           var t;
-          return function () {
-            clearTimeout(t);
-            t = setTimeout(fn, ms);
-          };
+          return function () { clearTimeout(t); t = setTimeout(fn, ms); };
         }
 
-        var debouncedInject = debounce(tryInject, 200);
+        var debouncedInject = debounce(tryInject, 180);
 
-        // MutationObserver: re-inject when widget disappears or is corrupted
         var observer = new MutationObserver(function () {
+          if (!onDashboard()) return;
           var w = document.getElementById("dn-overview-widget");
           if (!w || !w.querySelector(".dn-card")) debouncedInject();
         });
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // Staggered initial attempts + long-running fallback
-        setTimeout(tryInject, 400);
-        setTimeout(tryInject, 900);
-        setTimeout(tryInject, 1800);
-        setTimeout(tryInject, 3500);
+        window.addEventListener("popstate", function () {
+          setTimeout(tryInject, 350);
+        });
+
+        setTimeout(tryInject, 300);
+        setTimeout(tryInject, 750);
+        setTimeout(tryInject, 1500);
         setInterval(function () {
-          var w = document.getElementById("dn-overview-widget");
-          if (!w || !w.querySelector(".dn-card")) tryInject();
-        }, 5000);
+          if (onDashboard()) {
+            var w = document.getElementById("dn-overview-widget");
+            if (!w || !w.querySelector(".dn-card")) tryInject();
+          }
+        }, 4000);
       })();
     </script>
     <script>
@@ -1321,7 +1316,7 @@
             '<p style="color:rgba(255,255,255,0.5);font-size:0.7rem;font-weight:700;' +
             'text-transform:uppercase;letter-spacing:0.08em;margin:0;">Escolher \u00edcone</p>' +
             '<button id="icon-modal-close" style="background:none;border:none;' +
-            'color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;' +
+            "color:rgba(255,255,255,0.4);font-size:1.3rem;cursor:pointer;" +
             'line-height:1;padding:0.25rem 0.5rem;">\u00d7</button>' +
             "</div>" +
             '<div id="icon-modal-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px;">' +
@@ -1337,9 +1332,14 @@
           function cleanupAll(andCancelReact) {
             if (modalClosed) return;
             modalClosed = true;
-            if (pickerObs) { pickerObs.disconnect(); pickerObs = null; }
+            if (pickerObs) {
+              pickerObs.disconnect();
+              pickerObs = null;
+            }
             if (andCancelReact) {
-              var cancelBtn = cats8.querySelector(".flex-col.gap-1 button:last-child");
+              var cancelBtn = cats8.querySelector(
+                ".flex-col.gap-1 button:last-child",
+              );
               if (cancelBtn) cancelBtn.click();
             }
             modalOv.remove();
@@ -1352,9 +1352,11 @@
             setTimeout(buildCatList, 200);
           }
 
-          document.getElementById("icon-modal-close").addEventListener("click", function () {
-            cleanupAll(true);
-          });
+          document
+            .getElementById("icon-modal-close")
+            .addEventListener("click", function () {
+              cleanupAll(true);
+            });
           modalOv.addEventListener("click", function (e) {
             if (e.target === modalOv) cleanupAll(true);
           });
@@ -1363,11 +1365,16 @@
           var editBtn = cats8.querySelector(
             '[data-cat-pill="' + catId + '"] button[title="Editar"]',
           );
-          if (!editBtn) { cleanupAll(false); return; }
+          if (!editBtn) {
+            cleanupAll(false);
+            return;
+          }
           editBtn.click();
 
           setTimeout(function () {
-            var iconAlterBtn = cats8.querySelector('button[title="Alterar \u00edcone"]');
+            var iconAlterBtn = cats8.querySelector(
+              'button[title="Alterar \u00edcone"]',
+            );
             if (iconAlterBtn) iconAlterBtn.click();
 
             // Poll until the _B icon grid appears inside filterPanel
@@ -1377,7 +1384,10 @@
               var reactGrid = filterPanel.querySelector(".grid");
               if (reactGrid || waitCount > 30) {
                 clearInterval(waitTimer);
-                if (!reactGrid) { cleanupAll(false); return; }
+                if (!reactGrid) {
+                  cleanupAll(false);
+                  return;
+                }
 
                 // Build our icon buttons by cloning SVG content from the hidden React grid
                 iconGrid.innerHTML = "";
@@ -1392,7 +1402,10 @@
                     "cursor:pointer;padding:0;flex-shrink:0;";
                   myBtn.innerHTML = reactBtn.innerHTML;
                   var svg = myBtn.querySelector("svg");
-                  if (svg) { svg.style.width = "1.1rem"; svg.style.height = "1.1rem"; }
+                  if (svg) {
+                    svg.style.width = "1.1rem";
+                    svg.style.height = "1.1rem";
+                  }
                   myBtn.addEventListener("click", function () {
                     if (isUpload) {
                       var fi = filterPanel.querySelector("input[type=file]");
@@ -1420,7 +1433,9 @@
                           );
                           if (saveBtn) saveBtn.click();
                         }
-                        setTimeout(function () { cleanupAll(false); }, 300);
+                        setTimeout(function () {
+                          cleanupAll(false);
+                        }, 300);
                       }, 300);
                     }
                   });
@@ -1431,7 +1446,9 @@
 
             // Watch for React exiting edit mode automatically
             pickerObs = new MutationObserver(function () {
-              if (!cats8.querySelector('[data-cat-pill="' + catId + '"] input')) {
+              if (
+                !cats8.querySelector('[data-cat-pill="' + catId + '"] input')
+              ) {
                 pickerObs.disconnect();
                 pickerObs = null;
                 cleanupAll(false);
