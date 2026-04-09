@@ -809,7 +809,9 @@
           el.querySelector("#dn-analyze-btn").addEventListener(
             "click",
             function () {
-              history.pushState(null, "", "/categories");
+              // Detect base path for GitHub Pages vs custom domain
+              var base = window.location.pathname.match(/^(\/meudenerosapp)/) ? "/meudenerosapp" : "";
+              history.pushState(null, "", base + "/categories");
               window.dispatchEvent(new PopStateEvent("popstate"));
             },
           );
@@ -831,8 +833,12 @@
         }
 
         function onDashboard() {
-          var p = window.location.pathname;
-          return p === "/" || p === "";
+          // pathname can be "/" (custom domain / localhost)
+          // or "/meudenerosapp" / "/meudenerosapp/" (GitHub Pages subpath, no Location override)
+          // or "" in some edge cases.
+          // We treat "dashboard" as: no known sub-route in the path.
+          var p = window.location.pathname.replace(/^\/meudenerosapp/, "") || "/";
+          return p === "/" || p === "" || p === "/dashboard";
         }
 
         var _injecting = false;
@@ -1655,32 +1661,74 @@
           "</div>" +
           '<div id="cat-detail-body"></div>';
         document.body.appendChild(detailEl);
-        document.getElementById("cat-detail-back").addEventListener("click", function () {
-          detailEl.classList.remove("open");
-          detailEl.scrollTop = 0;
-        });
+        document
+          .getElementById("cat-detail-back")
+          .addEventListener("click", function () {
+            detailEl.classList.remove("open");
+            detailEl.scrollTop = 0;
+          });
 
-        var MONTHS_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-        var MONTHS_FULL  = ["Janeiro","Fevereiro","Mar\u00e7o","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+        var MONTHS_SHORT = [
+          "Jan",
+          "Fev",
+          "Mar",
+          "Abr",
+          "Mai",
+          "Jun",
+          "Jul",
+          "Ago",
+          "Set",
+          "Out",
+          "Nov",
+          "Dez",
+        ];
+        var MONTHS_FULL = [
+          "Janeiro",
+          "Fevereiro",
+          "Mar\u00e7o",
+          "Abril",
+          "Maio",
+          "Junho",
+          "Julho",
+          "Agosto",
+          "Setembro",
+          "Outubro",
+          "Novembro",
+          "Dezembro",
+        ];
 
         function openCatDetail(catName, iconHtml) {
           var now = new Date();
-          var curY = now.getFullYear(), curM = now.getMonth();
+          var curY = now.getFullYear(),
+            curM = now.getMonth();
           var monthLabel = MONTHS_FULL[curM];
 
           // Read localStorage
           var transactions = [];
-          var categories   = [];
-          try { transactions = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
-          try { categories   = JSON.parse(localStorage.getItem("finance_categories")   || "[]"); } catch (e) {}
+          var categories = [];
+          try {
+            transactions = JSON.parse(
+              localStorage.getItem("finance_transactions") || "[]",
+            );
+          } catch (e) {}
+          try {
+            categories = JSON.parse(
+              localStorage.getItem("finance_categories") || "[]",
+            );
+          } catch (e) {}
 
-          var cat = categories.find(function (c) { return c.name === catName; });
+          var cat = categories.find(function (c) {
+            return c.name === catName;
+          });
           var realId = cat ? cat.id : null;
 
           function matchesCat(t) {
-            return t.type === "expense" &&
-              (t.categoryId === realId || (!realId && t.categoryName === catName) ||
-               (realId && t.categoryName === catName));
+            return (
+              t.type === "expense" &&
+              (t.categoryId === realId ||
+                (!realId && t.categoryName === catName) ||
+                (realId && t.categoryName === catName))
+            );
           }
 
           // Current-month expenses for this category
@@ -1689,41 +1737,97 @@
             var d = new Date(t.date);
             return d.getFullYear() === curY && d.getMonth() === curM;
           });
-          curTxns.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
-          var curTotal = curTxns.reduce(function (s, t) { return s + t.amount; }, 0);
+          curTxns.sort(function (a, b) {
+            return new Date(b.date) - new Date(a.date);
+          });
+          var curTotal = curTxns.reduce(function (s, t) {
+            return s + t.amount;
+          }, 0);
 
           // Last 6 months data for chart
           var chartData = [];
           for (var i = 5; i >= 0; i--) {
             var d = new Date(curY, curM - i, 1);
-            var dy = d.getFullYear(), dm = d.getMonth();
+            var dy = d.getFullYear(),
+              dm = d.getMonth();
             var mTotal = transactions.reduce(function (s, t) {
               if (!matchesCat(t)) return s;
               var td = new Date(t.date);
-              return (td.getFullYear() === dy && td.getMonth() === dm) ? s + t.amount : s;
+              return td.getFullYear() === dy && td.getMonth() === dm
+                ? s + t.amount
+                : s;
             }, 0);
-            chartData.push({ label: MONTHS_SHORT[dm], total: mTotal, current: i === 0 });
+            chartData.push({
+              label: MONTHS_SHORT[dm],
+              total: mTotal,
+              current: i === 0,
+            });
           }
 
           // Build bar chart SVG
           var maxVal = 0;
-          chartData.forEach(function (d) { if (d.total > maxVal) maxVal = d.total; });
+          chartData.forEach(function (d) {
+            if (d.total > maxVal) maxVal = d.total;
+          });
           if (!maxVal) maxVal = 1;
-          var cW = 320, cH = 90, barW = 32, barGap = (cW - barW * 6) / 7;
-          var svgParts = ['<svg id="cd-chart-svg" viewBox="0 0 ' + cW + ' ' + (cH + 28) + '" preserveAspectRatio="xMidYMid meet">'];
+          var cW = 320,
+            cH = 90,
+            barW = 32,
+            barGap = (cW - barW * 6) / 7;
+          var svgParts = [
+            '<svg id="cd-chart-svg" viewBox="0 0 ' +
+              cW +
+              " " +
+              (cH + 28) +
+              '" preserveAspectRatio="xMidYMid meet">',
+          ];
           chartData.forEach(function (d, idx) {
             var x = barGap + idx * (barW + barGap);
             var barH = d.total > 0 ? Math.max(6, (d.total / maxVal) * cH) : 6;
             var y = cH - barH;
-            var fill = d.current ? "rgba(167,139,250,0.85)" : "rgba(167,139,250,0.22)";
-            svgParts.push('<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW + '" height="' + barH.toFixed(1) + '" rx="7" fill="' + fill + '"/>');
+            var fill = d.current
+              ? "rgba(167,139,250,0.85)"
+              : "rgba(167,139,250,0.22)";
+            svgParts.push(
+              '<rect x="' +
+                x.toFixed(1) +
+                '" y="' +
+                y.toFixed(1) +
+                '" width="' +
+                barW +
+                '" height="' +
+                barH.toFixed(1) +
+                '" rx="7" fill="' +
+                fill +
+                '"/>',
+            );
             if (d.current && d.total > 0) {
               var valLabel = formatBRL(d.total);
-              svgParts.push('<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 7).toFixed(1) + '" text-anchor="middle" fill="rgba(167,139,250,0.9)" font-size="9" font-weight="700" font-family="Inter,sans-serif">' + valLabel + '</text>');
+              svgParts.push(
+                '<text x="' +
+                  (x + barW / 2).toFixed(1) +
+                  '" y="' +
+                  (y - 7).toFixed(1) +
+                  '" text-anchor="middle" fill="rgba(167,139,250,0.9)" font-size="9" font-weight="700" font-family="Inter,sans-serif">' +
+                  valLabel +
+                  "</text>",
+              );
             }
             var lc = d.current ? "#fff" : "rgba(255,255,255,0.4)";
             var lw = d.current ? "700" : "400";
-            svgParts.push('<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (cH + 20) + '" text-anchor="middle" fill="' + lc + '" font-size="11" font-weight="' + lw + '" font-family="Inter,sans-serif">' + d.label + '</text>');
+            svgParts.push(
+              '<text x="' +
+                (x + barW / 2).toFixed(1) +
+                '" y="' +
+                (cH + 20) +
+                '" text-anchor="middle" fill="' +
+                lc +
+                '" font-size="11" font-weight="' +
+                lw +
+                '" font-family="Inter,sans-serif">' +
+                d.label +
+                "</text>",
+            );
           });
           svgParts.push("</svg>");
           var chartSvg = svgParts.join("");
@@ -1734,35 +1838,49 @@
           curTxns.forEach(function (t) {
             var td = new Date(t.date);
             var key = td.getDate() + " de " + MONTHS_FULL[td.getMonth()];
-            if (!groups[key]) { groups[key] = []; groupOrder.push(key); }
+            if (!groups[key]) {
+              groups[key] = [];
+              groupOrder.push(key);
+            }
             groups[key].push(t);
           });
 
           // Build transactions HTML
           var txnHtml = "";
           groupOrder.forEach(function (groupKey) {
-            txnHtml += '<div class="cd-txn-group-title">' + groupKey + '</div>';
+            txnHtml += '<div class="cd-txn-group-title">' + groupKey + "</div>";
             groups[groupKey].forEach(function (t) {
               var td = new Date(t.date);
-              var hm = td.getHours() + "h" + String(td.getMinutes()).padStart(2, "0");
+              var hm =
+                td.getHours() + "h" + String(td.getMinutes()).padStart(2, "0");
               txnHtml +=
                 '<div class="cd-txn-row">' +
-                '<div class="cd-txn-icon">' + iconHtml + "</div>" +
+                '<div class="cd-txn-icon">' +
+                iconHtml +
+                "</div>" +
                 '<div style="flex:1;min-width:0;">' +
-                '<div class="cd-txn-title">' + (t.title || "Transação") + "</div>" +
+                '<div class="cd-txn-title">' +
+                (t.title || "Transação") +
+                "</div>" +
                 "</div>" +
                 '<div style="text-align:right;flex-shrink:0;">' +
-                '<div class="cd-txn-amount">- ' + formatBRL(t.amount) + "</div>" +
-                '<div class="cd-txn-date">' + hm + "</div>" +
+                '<div class="cd-txn-amount">- ' +
+                formatBRL(t.amount) +
+                "</div>" +
+                '<div class="cd-txn-date">' +
+                hm +
+                "</div>" +
                 "</div>" +
                 "</div>";
             });
           });
 
-          var countText = curTxns.length + " gasto" + (curTxns.length !== 1 ? "s" : "");
-          var emptyHtml = curTxns.length === 0
-            ? '<div id="cd-empty">Nenhum gasto em ' + monthLabel + '</div>'
-            : "";
+          var countText =
+            curTxns.length + " gasto" + (curTxns.length !== 1 ? "s" : "");
+          var emptyHtml =
+            curTxns.length === 0
+              ? '<div id="cd-empty">Nenhum gasto em ' + monthLabel + "</div>"
+              : "";
 
           // Assemble body
           var body = document.getElementById("cat-detail-body");
@@ -1770,10 +1888,18 @@
             // Hero card
             '<div class="cd-card">' +
             '<div id="cd-hero">' +
-            '<div id="cd-hero-icon">' + iconHtml + "</div>" +
-            '<div><div id="cd-hero-name">' + catName + "</div>" +
-            '<div id="cd-hero-period">' + monthLabel + "</div></div>" +
-            '<div id="cd-hero-total">' + formatBRL(curTotal) + "</div>" +
+            '<div id="cd-hero-icon">' +
+            iconHtml +
+            "</div>" +
+            '<div><div id="cd-hero-name">' +
+            catName +
+            "</div>" +
+            '<div id="cd-hero-period">' +
+            monthLabel +
+            "</div></div>" +
+            '<div id="cd-hero-total">' +
+            formatBRL(curTotal) +
+            "</div>" +
             "</div></div>" +
             // Chart card
             '<div class="cd-card">' +
@@ -1782,7 +1908,11 @@
             "</div>" +
             // Transactions card
             '<div class="cd-card" style="margin-bottom:5rem;">' +
-            '<div id="cd-txn-count">' + countText + " em " + monthLabel + "</div>" +
+            '<div id="cd-txn-count">' +
+            countText +
+            " em " +
+            monthLabel +
+            "</div>" +
             (curTxns.length > 0 ? txnHtml : emptyHtml) +
             "</div>";
 
@@ -1953,7 +2083,10 @@
 
             // Tap row (not icon) → category detail page
             row.addEventListener("click", function (e) {
-              if (catLongPressed) { catLongPressed = false; return; }
+              if (catLongPressed) {
+                catLongPressed = false;
+                return;
+              }
               if (e.target.closest(".cat-row-icon")) return;
               openCatDetail(name, iconHtml);
             });
