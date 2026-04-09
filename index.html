@@ -2100,35 +2100,16 @@
           while (listEl.children.length > 1)
             listEl.removeChild(listEl.lastChild);
 
-          // Collect transaction totals per category from the stats in DOM
-          // We'll read what React rendered in the transaction list section
-          var totals = {};
-          document
-            .querySelectorAll(
-              ".space-y-8 > div:last-child .glass-panel.rounded-xl.p-4.group",
-            )
-            .forEach(function (item) {
-              // Each item has categoryName text and amount
-              var catSpan = item.querySelector(
-                ".text-xs.text-muted-foreground",
-              );
-              var amountSpan = item.querySelector(".font-bold.font-display");
-              var isExpense =
-                amountSpan &&
-                amountSpan.textContent.trim().startsWith("-") === false &&
-                item.querySelector(".text-destructive") !== null;
-              if (catSpan && amountSpan) {
-                var catName = catSpan.textContent.trim();
-                var amtText = amountSpan.textContent
-                  .replace(/[R$+\-\s]/g, "")
-                  .replace(",", ".")
-                  .replace(/\./g, function (m, o, s) {
-                    return o < s.lastIndexOf(".") ? "" : ".";
-                  });
-                var amt = parseFloat(amtText) || 0;
-                totals[catName] = (totals[catName] || 0) + amt;
-              }
-            });
+          // Compute net balance per category directly from localStorage
+          var allTxs = [];
+          try { allTxs = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
+          var netBalance = {};
+          allTxs.forEach(function (t) {
+            var name = t.categoryName || "";
+            if (!name) return;
+            if (netBalance[name] === undefined) netBalance[name] = 0;
+            netBalance[name] += t.type === "income" ? t.amount : -t.amount;
+          });
 
           pills.forEach(function (wrapper) {
             // Find the group div (non-editing state)
@@ -2152,7 +2133,18 @@
             var catId = "cat-" + name.toLowerCase().replace(/\s+/g, "-");
             wrapper.setAttribute("data-cat-pill", catId);
 
-            var total = totals[name] || 0;
+            var net = netBalance[name] !== undefined ? netBalance[name] : null;
+            var isExpense = net !== null && net < 0;
+            var isIncome  = net !== null && net >= 0;
+            var iconColor  = isExpense ? "rgb(239,68,68)"  : isIncome ? "rgb(74,222,128)" : "rgba(255,255,255,0.5)";
+            var iconBg     = isExpense ? "rgba(239,68,68,0.12)" : isIncome ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.08)";
+            var amountHtml = "";
+            if (net !== null && net !== 0) {
+              var absStr = formatBRL(Math.abs(net));
+              var sign   = net < 0 ? "-\u00a0" : "+\u00a0";
+              var amtColor = net < 0 ? "color:rgba(239,68,68,0.8)" : "color:rgba(74,222,128,0.8)";
+              amountHtml = '<div class="cat-row-total" style="' + amtColor + '">' + sign + absStr + '</div>';
+            }
 
             var row = document.createElement("div");
             row.className = "cat-row";
@@ -2166,14 +2158,18 @@
               name +
               "</div>" +
               '<div class="cat-row-right">' +
-              '<div class="cat-row-total">' +
-              (total > 0 ? formatBRL(total) : "") +
-              "</div>" +
+              amountHtml +
               "</div>";
 
-            // Tap icon to change it
+            // Override icon colors after insertion
             var iconDiv = row.querySelector(".cat-row-icon");
             if (iconDiv) {
+              var innerIconDiv = iconDiv.firstElementChild;
+              if (innerIconDiv) {
+                innerIconDiv.style.background = iconBg;
+                innerIconDiv.style.color = iconColor;
+              }
+              // Tap icon to change it
               iconDiv.addEventListener("click", function (e) {
                 e.stopPropagation();
                 openIconPicker(catId);
@@ -2271,7 +2267,11 @@
       (function () {
         function getNetByName() {
           var txs = [];
-          try { txs = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
+          try {
+            txs = JSON.parse(
+              localStorage.getItem("finance_transactions") || "[]",
+            );
+          } catch (e) {}
           var net = {};
           txs.forEach(function (t) {
             var name = t.categoryName || "";
@@ -2286,7 +2286,9 @@
           var net = getNetByName();
           // The ss() React component renders: div.rounded-2xl.bg-primary/10 > svg.text-primary
           // or div.rounded-2xl.bg-white/10 (letter fallback)
-          var wrappers = document.querySelectorAll(".rounded-2xl.bg-primary\\/10, .rounded-2xl.bg-white\\/10");
+          var wrappers = document.querySelectorAll(
+            ".rounded-2xl.bg-primary\\/10, .rounded-2xl.bg-white\\/10",
+          );
           wrappers.forEach(function (el) {
             // Skip our own widget icons
             if (el.closest("#dn-overview-widget")) return;
@@ -2296,7 +2298,10 @@
             var sibling = null;
             for (var i = 0; i < parent.children.length; i++) {
               var c = parent.children[i];
-              if (c !== el) { sibling = c; break; }
+              if (c !== el) {
+                sibling = c;
+                break;
+              }
             }
             if (!sibling) return;
             var nameEl = sibling.querySelector("p");
