@@ -2571,7 +2571,20 @@
             if (parts.length === 2) {
               var yr = parseInt(parts[1]);
               var mo3 = parts[0].slice(0, 3).toLowerCase();
-              var lc = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+              var lc = [
+                "jan",
+                "fev",
+                "mar",
+                "abr",
+                "mai",
+                "jun",
+                "jul",
+                "ago",
+                "set",
+                "out",
+                "nov",
+                "dez",
+              ];
               var mi = lc.indexOf(mo3);
               if (!isNaN(yr) && mi !== -1) return { year: yr, month: mi };
             }
@@ -2868,10 +2881,13 @@
           allTxs.forEach(function (t) {
             if (t.type !== "expense") return;
             var td = new Date(t.date);
-            if (td.getFullYear() !== sel.year || td.getMonth() !== sel.month) return;
+            if (td.getFullYear() !== sel.year || td.getMonth() !== sel.month)
+              return;
             var catName = t.categoryName || "";
             if (!catName && t.categoryId) {
-              var cat = allCats.find(function (c) { return c.id === t.categoryId; });
+              var cat = allCats.find(function (c) {
+                return c.id === t.categoryId;
+              });
               if (cat) catName = cat.name;
             }
             if (!catName) return;
@@ -2903,13 +2919,18 @@
             var net = netBalance[name] !== undefined ? netBalance[name] : null;
             // netBalance holds expense totals for the selected month (always positive)
             var hasExpense = net !== null && net > 0;
-            var iconColor = hasExpense ? "rgb(239,68,68)" : "rgba(255,255,255,0.5)";
-            var iconBg    = hasExpense ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.08)";
+            var iconColor = hasExpense
+              ? "rgb(239,68,68)"
+              : "rgba(255,255,255,0.5)";
+            var iconBg = hasExpense
+              ? "rgba(239,68,68,0.12)"
+              : "rgba(255,255,255,0.08)";
             var amountHtml = "";
             if (hasExpense) {
               amountHtml =
                 '<div class="cat-row-total" style="color:rgba(239,68,68,0.8);">' +
-                "-\u00a0" + formatBRL(net) +
+                "-\u00a0" +
+                formatBRL(net) +
                 "</div>";
             }
 
