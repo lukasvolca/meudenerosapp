@@ -36,44 +36,77 @@
       })(window.location);
     </script>
         <script>
-      // GitHub Pages subpath fix for beta/
-      // The wouter Router appends to parent context base ("/meudenerosapp"),
-      // so location.pathname must return "/meudenerosapp/[route]" not just "/[route]".
-      // Real browser URL stays at /meudenerosapp/beta/[route].
+      // GitHub Pages subpath fix for beta/ — dual-layer approach:
+      // Layer 1: Change actual URL /meudenerosapp/beta/X → /meudenerosapp/X so
+      //          location.pathname is natively correct before React loads.
+      // Layer 2: Patch Location.prototype.pathname as backup for navigation events.
+      // Wrap pushState/replaceState to keep browser URL in /meudenerosapp/beta/*.
       (function () {
-        var base = "/meudenerosapp/beta";
+        var betaBase = "/meudenerosapp/beta";
         var appBase = "/meudenerosapp";
+
+        // Capture real pathname BEFORE any patching (via raw descriptor)
+        var realPath = "";
+        try {
+          var rawDesc = Object.getOwnPropertyDescriptor(
+            Location.prototype,
+            "pathname",
+          );
+          realPath =
+            rawDesc && rawDesc.get
+              ? rawDesc.get.call(location)
+              : location.pathname;
+        } catch (e) {
+          realPath = location.pathname;
+        }
+
+        // Layer 2: Patch Location.prototype.pathname
         var desc = Object.getOwnPropertyDescriptor(
           Location.prototype,
           "pathname",
         );
-        if (desc && desc.configurable) {
+        if (desc && desc.configurable && desc.get) {
+          var origGet = desc.get;
           Object.defineProperty(Location.prototype, "pathname", {
             get: function () {
-              var p = desc.get.call(this);
-              if (p === base) return appBase + "/";
-              if (p.startsWith(base + "/")) return appBase + p.slice(base.length);
+              var p = origGet.call(this);
+              if (p === betaBase) return appBase + "/";
+              if (p.startsWith(betaBase + "/"))
+                return appBase + p.slice(betaBase.length);
               return p;
             },
             configurable: true,
             enumerable: desc.enumerable,
           });
         }
-        var _push = history.pushState.bind(history);
-        var _replace = history.replaceState.bind(history);
-        function addBase(u) {
+
+        // Helper: convert appBase → betaBase URLs for browser bar
+        function toBeta(u) {
           if (!u || typeof u !== "string" || u.startsWith("http")) return u;
-          if (u === base || u.startsWith(base + "/")) return u;
-          if (u === appBase || u === appBase + "/") return base + "/";
-          if (u.startsWith(appBase + "/")) return base + u.slice(appBase.length);
+          if (u === betaBase || u.startsWith(betaBase + "/")) return u;
+          if (u === appBase || u === appBase + "/") return betaBase + "/";
+          if (u.startsWith(appBase + "/"))
+            return betaBase + u.slice(appBase.length);
           return u;
         }
+
+        // Capture original methods before installing wrappers
+        var origPush = history.pushState.bind(history);
+        var origReplace = history.replaceState.bind(history);
+
+        // Install pushState/replaceState wrappers
         history.pushState = function (s, t, u) {
-          _push(s, t, addBase(u));
+          origPush(s, t, toBeta(u));
         };
         history.replaceState = function (s, t, u) {
-          _replace(s, t, addBase(u));
+          origReplace(s, t, toBeta(u));
         };
+
+        // Layer 1: Actually change URL using origReplace (bypasses our wrapper)
+        if (realPath === betaBase || realPath.startsWith(betaBase + "/")) {
+          var newPath = appBase + (realPath.slice(betaBase.length) || "/");
+          origReplace(history.state, "", newPath);
+        }
       })();
     </script>
     <script>
