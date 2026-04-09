@@ -475,9 +475,6 @@
       /* ==========================================
          Monthly Overview Widget
          ========================================== */
-      #dn-overview-widget {
-        font-family: Inter, sans-serif;
-      }
       #dn-overview-widget .dn-card {
         border-radius: 1.25rem;
         padding: 1.5rem;
@@ -511,13 +508,17 @@
       #dn-overview-widget .dn-link:hover {
         opacity: 0.75;
       }
+      #dn-overview-widget {
+        font-family: Inter, sans-serif;
+        margin-bottom: 2rem;
+      }
       #dn-overview-widget .dn-chart-wrap {
         display: flex;
         align-items: center;
         justify-content: center;
         position: relative;
-        width: 240px;
-        height: 240px;
+        width: 280px;
+        height: 280px;
         margin: 0 auto;
       }
       #dn-overview-widget .dn-chart-wrap svg {
@@ -699,30 +700,31 @@
 
         function buildSVG(sorted, total) {
           if (!total) return "";
-          var cx = 120, cy = 120, r = 88, sw = 20;
-          // Only apply gap between segments when there are multiple categories
-          var gapDeg = sorted.length > 1 ? 2.5 : 0;
+          var size = 280, cx = 140, cy = 140, r = 108, sw = 22;
+          var GAP = 3; // degrees gap between segments
           var currentAngle = 0;
           var arcs = "";
+          var count = sorted.length;
           sorted.forEach(function (seg, i) {
             var pct = seg.total / total;
-            var sweep = pct * 360 - gapDeg;
-            if (sweep <= 0) return;
+            var totalSweep = pct * 360;
+            // Apply gap only when there is room; guarantee tiny slices are at least 3deg visible
+            var usedSweep = count > 1 ? Math.max(totalSweep - GAP, Math.min(totalSweep, 3)) : totalSweep;
+            if (usedSweep <= 0) { currentAngle += totalSweep; return; }
             var s = polarXY(cx, cy, r, currentAngle);
-            var e = polarXY(cx, cy, r, currentAngle + sweep);
-            var large = sweep > 180 ? 1 : 0;
-            arcs +=
-              '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
+            var e = polarXY(cx, cy, r, currentAngle + usedSweep);
+            var large = usedSweep > 180 ? 1 : 0;
+            arcs += '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
               ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
               e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
               ' fill="none" stroke="' + PALETTE[i % PALETTE.length] + '"' +
-              ' stroke-width="' + sw + '" stroke-linecap="round"/>';
-            currentAngle += pct * 360;
+              ' stroke-width="' + sw + '" stroke-linecap="butt"/>';
+            currentAngle += totalSweep;
           });
           return (
-            '<svg viewBox="0 0 240 240" style="display:block;width:100%;height:100%;">' +
+            '<svg viewBox="0 0 ' + size + ' ' + size + '" style="display:block;width:100%;height:100%;">' +
             '<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
-            '" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="' + sw + '"/>' +
+            '" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="' + sw + '"/>' +
             arcs + '</svg>'
           );
         }
