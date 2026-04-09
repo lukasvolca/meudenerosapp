@@ -37,11 +37,10 @@
     </script>
         <script>
       // GitHub Pages subpath fix: patches Location.prototype.pathname
-      // so the SPA router (wouter, base="/meudenerosapp") sees "/meudenerosapp/[route]"
-      // instead of "/meudenerosapp/beta/[route]", while browser URLs keep the /beta prefix.
+      // so the SPA router sees "/" instead of "/meudenerosapp/beta/",
+      // while real browser URLs keep the "/meudenerosapp/beta" prefix.
       (function () {
         var base = "/meudenerosapp/beta";
-        var appBase = "/meudenerosapp";
         var desc = Object.getOwnPropertyDescriptor(
           Location.prototype,
           "pathname",
@@ -50,10 +49,9 @@
           Object.defineProperty(Location.prototype, "pathname", {
             get: function () {
               var p = desc.get.call(this);
-              if (p === base || p.startsWith(base + "/")) {
-                return appBase + (p.slice(base.length) || "/");
-              }
-              return p;
+              return p === base || p.startsWith(base + "/")
+                ? p.slice(base.length) || "/"
+                : p;
             },
             configurable: true,
             enumerable: desc.enumerable,
@@ -62,11 +60,16 @@
         var _push = history.pushState.bind(history);
         var _replace = history.replaceState.bind(history);
         function addBase(u) {
-          if (!u || typeof u !== "string" || u.startsWith("http")) return u;
-          if (u === base || u.startsWith(base + "/")) return u;
-          if (u === appBase) return base;
-          if (u.startsWith(appBase + "/")) return base + u.slice(len(appBase));
-          return u;
+          if (
+            !u ||
+            typeof u !== "string" ||
+            u.startsWith("http") ||
+            u === base ||
+            u.startsWith(base + "/")
+          )
+            return u;
+          if (u[0] !== "/") return u;
+          return base + u;
         }
         history.pushState = function (s, t, u) {
           _push(s, t, addBase(u));
