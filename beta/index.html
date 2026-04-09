@@ -60,6 +60,22 @@
         var _push = history.pushState.bind(history);
         var _replace = history.replaceState.bind(history);
         function addBase(u) {
+<<<<<<< HEAD
+<<<<<<< HEAD
+          if (!u || typeof u !== "string" || u.startsWith("http")) return u;
+          if (u === base || u.startsWith(base + "/")) return u;
+          if (u === appBase) return base;
+          if (u.startsWith(appBase + "/"))
+            return base + u.slice(appBase.length);
+          return u;
+=======
+          if (!u || typeof u !== "string" || u.startsWith("http")) return u;
+          if (u === base || u.startsWith(base + "/")) return u;
+          if (u === appBase) return base;
+          if (u.startsWith(appBase + "/")) return base + u.slice(len(appBase));
+          return u;
+>>>>>>> 4ca346aef3bbd4ebab94d0c4d9dc621c45e08602
+=======
           if (
             !u ||
             typeof u !== "string" ||
@@ -70,6 +86,7 @@
             return u;
           if (u[0] !== "/") return u;
           return base + u;
+>>>>>>> 77baa17e7acc2430c753d31214b6d7eaff486730
         }
         history.pushState = function (s, t, u) {
           _push(s, t, addBase(u));
