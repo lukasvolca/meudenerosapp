@@ -36,40 +36,6 @@
       })(window.location);
     </script>
             <script>
-      // GitHub Pages beta subpath fix.
-      // Wouter compiled with base="/meudenerosapp".
-      // Real URL: /meudenerosapp/beta/X -> Router sees: /meudenerosapp/X
-      (function () {
-        var urlBase = "/meudenerosapp/beta";
-        var appBase = "/meudenerosapp";
-        var desc = Object.getOwnPropertyDescriptor(Location.prototype, "pathname");
-        if (desc && desc.configurable && desc.get) {
-          var origGet = desc.get;
-          Object.defineProperty(Location.prototype, "pathname", {
-            get: function () {
-              var p = origGet.call(this);
-              if (p === urlBase) return appBase;
-              if (p.startsWith(urlBase + "/")) return appBase + p.slice(urlBase.length);
-              return p;
-            },
-            configurable: true,
-            enumerable: desc.enumerable,
-          });
-        }
-        var origPush = history.pushState.bind(history);
-        var origReplace = history.replaceState.bind(history);
-        function toUrlSpace(u) {
-          if (!u || typeof u !== "string" || u.startsWith("http")) return u;
-          if (u === urlBase || u.startsWith(urlBase + "/")) return u;
-          if (u === appBase) return urlBase;
-          if (u.startsWith(appBase + "/")) return urlBase + u.slice(appBase.length);
-          return u;
-        }
-        history.pushState = function (s, t, u) { origPush(s, t, toUrlSpace(u)); };
-        history.replaceState = function (s, t, u) { origReplace(s, t, toUrlSpace(u)); };
-      })();
-    </script>
-    <script>
       /* Pre-React capture listener — registered BEFORE the React bundle so it
          is first in the document-level capture queue. stopImmediatePropagation()
          prevents React from ever seeing clicks on our tooltip targets. */
@@ -142,7 +108,7 @@
     <script
       type="module"
       crossorigin
-      src="/meudenerosapp/assets/index-q_187w_y.js"
+      src="/meudenerosapp/beta/assets/index-q_187w_y.js"
     ></script>
     <link
       rel="stylesheet"
