@@ -2249,5 +2249,82 @@
         }).observe(document.body, { childList: true, subtree: true });
       })();
     </script>
+    <style>
+      /* Category icon coloring based on net balance */
+      [data-dn-type="expense"] {
+        background: rgba(239, 68, 68, 0.12) !important;
+        color: rgb(239, 68, 68) !important;
+      }
+      [data-dn-type="expense"] svg {
+        color: rgb(239, 68, 68) !important;
+      }
+      [data-dn-type="income"] {
+        background: rgba(74, 222, 128, 0.12) !important;
+        color: rgb(74, 222, 128) !important;
+      }
+      [data-dn-type="income"] svg {
+        color: rgb(74, 222, 128) !important;
+      }
+    </style>
+    <script>
+      // Color category icons red (expense) or green (income) based on net balance
+      (function () {
+        function getNetByName() {
+          var txs = [];
+          try { txs = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
+          var net = {};
+          txs.forEach(function (t) {
+            var name = t.categoryName || "";
+            if (!name) return;
+            if (net[name] === undefined) net[name] = 0;
+            net[name] += t.type === "income" ? t.amount : -t.amount;
+          });
+          return net;
+        }
+
+        function colorIcons() {
+          var net = getNetByName();
+          // The ss() React component renders: div.rounded-2xl.bg-primary/10 > svg.text-primary
+          // or div.rounded-2xl.bg-white/10 (letter fallback)
+          var wrappers = document.querySelectorAll(".rounded-2xl.bg-primary\\/10, .rounded-2xl.bg-white\\/10");
+          wrappers.forEach(function (el) {
+            // Skip our own widget icons
+            if (el.closest("#dn-overview-widget")) return;
+            var parent = el.parentElement;
+            if (!parent) return;
+            // Find the sibling div that holds the category name in a <p>
+            var sibling = null;
+            for (var i = 0; i < parent.children.length; i++) {
+              var c = parent.children[i];
+              if (c !== el) { sibling = c; break; }
+            }
+            if (!sibling) return;
+            var nameEl = sibling.querySelector("p");
+            if (!nameEl) return;
+            var catName = nameEl.textContent.trim();
+            if (!catName || catName === "Sem categoria") return;
+            var balance = net[catName];
+            if (balance === undefined) return;
+            var type = balance < 0 ? "expense" : "income";
+            if (el.dataset.dnType !== type) {
+              el.dataset.dnType = type;
+            }
+          });
+        }
+
+        var pending = false;
+        new MutationObserver(function () {
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(function () {
+            pending = false;
+            colorIcons();
+          });
+        }).observe(document.body, { childList: true, subtree: true });
+
+        setTimeout(colorIcons, 600);
+        setTimeout(colorIcons, 1500);
+      })();
+    </script>
   </body>
 </html>
