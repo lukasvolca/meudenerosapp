@@ -622,16 +622,16 @@
           "Dezembro",
         ];
         var PALETTE = [
-          "#4ade80",
-          "#fb923c",
-          "#60a5fa",
-          "#a78bfa",
-          "#f472b6",
-          "#facc15",
-          "#34d399",
           "#f87171",
+          "#fb923c",
+          "#fbbf24",
+          "#facc15",
+          "#60a5fa",
           "#818cf8",
-          "#2dd4bf",
+          "#a78bfa",
+          "#c084fc",
+          "#f472b6",
+          "#e879f9",
         ];
 
         function fmtBRL(n) {
@@ -700,8 +700,12 @@
 
         function buildSVG(sorted, total) {
           if (!total) return "";
-          var size = 300, cx = 150, cy = 150, r = 118, sw = 22;
-          var capAngleDeg = Math.asin((sw / 2) / r) * (180 / Math.PI);
+          var size = 300,
+            cx = 150,
+            cy = 150,
+            r = 118,
+            sw = 22;
+          var capAngleDeg = Math.asin(sw / 2 / r) * (180 / Math.PI);
           var visualGap = 6;
           var currentAngle = 0;
           var segments = "";
@@ -710,30 +714,71 @@
             var pct = seg.total / total;
             var totalSweep = pct * 360;
             var color = PALETTE[i % PALETTE.length];
-            var arc = "", badge = "";
+            var arc = "",
+              badge = "";
             if (count > 1) {
               var arcSweep = totalSweep - visualGap - 2 * capAngleDeg;
               if (arcSweep <= 0) {
                 var mp = polarXY(cx, cy, r, currentAngle + totalSweep / 2);
-                arc = '<circle cx="' + mp[0].toFixed(2) + '" cy="' + mp[1].toFixed(2) +
-                  '" r="' + (sw / 2) + '" fill="' + color + '"/>';
+                arc =
+                  '<circle cx="' +
+                  mp[0].toFixed(2) +
+                  '" cy="' +
+                  mp[1].toFixed(2) +
+                  '" r="' +
+                  sw / 2 +
+                  '" fill="' +
+                  color +
+                  '"/>';
               } else {
                 var arcStart = currentAngle + visualGap / 2 + capAngleDeg;
                 var s = polarXY(cx, cy, r, arcStart);
                 var e = polarXY(cx, cy, r, arcStart + arcSweep);
                 var large = arcSweep > 180 ? 1 : 0;
-                arc = '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
-                  ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
-                  e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
-                  ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
+                arc =
+                  '<path d="M ' +
+                  s[0].toFixed(2) +
+                  " " +
+                  s[1].toFixed(2) +
+                  " A " +
+                  r +
+                  " " +
+                  r +
+                  " 0 " +
+                  large +
+                  " 1 " +
+                  e[0].toFixed(2) +
+                  " " +
+                  e[1].toFixed(2) +
+                  '"' +
+                  ' fill="none" stroke="' +
+                  color +
+                  '" stroke-width="' +
+                  sw +
+                  '" stroke-linecap="round"/>';
               }
             } else {
               var s = polarXY(cx, cy, r, currentAngle);
               var e = polarXY(cx, cy, r, currentAngle + 359.99);
-              arc = '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
-                ' A ' + r + ' ' + r + ' 0 1 1 ' +
-                e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
-                ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
+              arc =
+                '<path d="M ' +
+                s[0].toFixed(2) +
+                " " +
+                s[1].toFixed(2) +
+                " A " +
+                r +
+                " " +
+                r +
+                " 0 1 1 " +
+                e[0].toFixed(2) +
+                " " +
+                e[1].toFixed(2) +
+                '"' +
+                ' fill="none" stroke="' +
+                color +
+                '" stroke-width="' +
+                sw +
+                '" stroke-linecap="round"/>';
             }
             // Invisible wider hit area over the arc for easier tapping
             var hitSweep = Math.max(totalSweep - visualGap, 1);
@@ -741,29 +786,73 @@
             var hs = polarXY(cx, cy, r, hitStart);
             var he = polarXY(cx, cy, r, hitStart + hitSweep);
             var hitLarge = hitSweep > 180 ? 1 : 0;
-            var hit = '<path d="M ' + hs[0].toFixed(2) + ' ' + hs[1].toFixed(2) +
-              ' A ' + r + ' ' + r + ' 0 ' + hitLarge + ' 1 ' +
-              he[0].toFixed(2) + ' ' + he[1].toFixed(2) + '"' +
-              ' fill="none" stroke="transparent" stroke-width="' + (sw + 16) + '" stroke-linecap="butt"/>';
+            var hit =
+              '<path d="M ' +
+              hs[0].toFixed(2) +
+              " " +
+              hs[1].toFixed(2) +
+              " A " +
+              r +
+              " " +
+              r +
+              " 0 " +
+              hitLarge +
+              " 1 " +
+              he[0].toFixed(2) +
+              " " +
+              he[1].toFixed(2) +
+              '"' +
+              ' fill="none" stroke="transparent" stroke-width="' +
+              (sw + 16) +
+              '" stroke-linecap="butt"/>';
             if (totalSweep >= 22) {
               var midAngle = currentAngle + totalSweep / 2;
               var bp = polarXY(cx, cy, r, midAngle);
               var letter = seg.name.charAt(0).toUpperCase();
-              badge = '<circle cx="' + bp[0].toFixed(2) + '" cy="' + bp[1].toFixed(2) + '" r="13" fill="rgba(0,0,0,0.55)"/>' +
-                '<text x="' + bp[0].toFixed(2) + '" y="' + bp[1].toFixed(2) + '"' +
+              badge =
+                '<circle cx="' +
+                bp[0].toFixed(2) +
+                '" cy="' +
+                bp[1].toFixed(2) +
+                '" r="13" fill="rgba(0,0,0,0.55)"/>' +
+                '<text x="' +
+                bp[0].toFixed(2) +
+                '" y="' +
+                bp[1].toFixed(2) +
+                '"' +
                 ' text-anchor="middle" dominant-baseline="central"' +
                 ' font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#fff">' +
-                letter + '</text>';
+                letter +
+                "</text>";
             }
             // Wrap arc + hit area + badge in a group with data-catid for click navigation
-            segments += '<g data-catid="' + seg.id + '" style="cursor:pointer">' + arc + hit + badge + '</g>';
+            segments +=
+              '<g data-catid="' +
+              seg.id +
+              '" style="cursor:pointer">' +
+              arc +
+              hit +
+              badge +
+              "</g>";
             currentAngle += totalSweep;
           });
           return (
-            '<svg viewBox="0 0 ' + size + ' ' + size + '" style="display:block;width:100%;height:100%;">' +
-            '<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
-            '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="' + sw + '"/>' +
-            segments + '</svg>'
+            '<svg viewBox="0 0 ' +
+            size +
+            " " +
+            size +
+            '" style="display:block;width:100%;height:100%;">' +
+            '<circle cx="' +
+            cx +
+            '" cy="' +
+            cy +
+            '" r="' +
+            r +
+            '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="' +
+            sw +
+            '"/>' +
+            segments +
+            "</svg>"
           );
         }
 
@@ -851,7 +940,9 @@
               var base = window.location.pathname.match(/^(\/meudenerosapp)/)
                 ? "/meudenerosapp"
                 : "";
-              try { sessionStorage.setItem("dn_selected_cat", catId); } catch (e) {}
+              try {
+                sessionStorage.setItem("dn_selected_cat", catId);
+              } catch (e) {}
               history.pushState(null, "", base + "/categories");
               window.dispatchEvent(new PopStateEvent("popstate"));
             });
