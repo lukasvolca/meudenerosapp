@@ -36,11 +36,13 @@
       })(window.location);
     </script>
         <script>
-      // GitHub Pages subpath fix: patches Location.prototype.pathname
-      // so the SPA router sees "/" instead of "/meudenerosapp/beta/",
-      // while real browser URLs keep the "/meudenerosapp/beta" prefix.
+      // GitHub Pages subpath fix for beta/
+      // The wouter Router appends to parent context base ("/meudenerosapp"),
+      // so location.pathname must return "/meudenerosapp/[route]" not just "/[route]".
+      // Real browser URL stays at /meudenerosapp/beta/[route].
       (function () {
         var base = "/meudenerosapp/beta";
+        var appBase = "/meudenerosapp";
         var desc = Object.getOwnPropertyDescriptor(
           Location.prototype,
           "pathname",
@@ -49,9 +51,9 @@
           Object.defineProperty(Location.prototype, "pathname", {
             get: function () {
               var p = desc.get.call(this);
-              return p === base || p.startsWith(base + "/")
-                ? p.slice(base.length) || "/"
-                : p;
+              if (p === base) return appBase + "/";
+              if (p.startsWith(base + "/")) return appBase + p.slice(base.length);
+              return p;
             },
             configurable: true,
             enumerable: desc.enumerable,
@@ -60,33 +62,11 @@
         var _push = history.pushState.bind(history);
         var _replace = history.replaceState.bind(history);
         function addBase(u) {
-<<<<<<< HEAD
-<<<<<<< HEAD
           if (!u || typeof u !== "string" || u.startsWith("http")) return u;
           if (u === base || u.startsWith(base + "/")) return u;
-          if (u === appBase) return base;
-          if (u.startsWith(appBase + "/"))
-            return base + u.slice(appBase.length);
+          if (u === appBase || u === appBase + "/") return base + "/";
+          if (u.startsWith(appBase + "/")) return base + u.slice(appBase.length);
           return u;
-=======
-          if (!u || typeof u !== "string" || u.startsWith("http")) return u;
-          if (u === base || u.startsWith(base + "/")) return u;
-          if (u === appBase) return base;
-          if (u.startsWith(appBase + "/")) return base + u.slice(len(appBase));
-          return u;
->>>>>>> 4ca346aef3bbd4ebab94d0c4d9dc621c45e08602
-=======
-          if (
-            !u ||
-            typeof u !== "string" ||
-            u.startsWith("http") ||
-            u === base ||
-            u.startsWith(base + "/")
-          )
-            return u;
-          if (u[0] !== "/") return u;
-          return base + u;
->>>>>>> 77baa17e7acc2430c753d31214b6d7eaff486730
         }
         history.pushState = function (s, t, u) {
           _push(s, t, addBase(u));
