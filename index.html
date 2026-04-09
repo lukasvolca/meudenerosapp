@@ -35,6 +35,341 @@
         }
       })(window.location);
     </script>
+<<<<<<< HEAD
+    <script>
+      // GitHub Pages subpath fix: patches Location.prototype.pathname
+      // so the SPA router sees "/" instead of "/meudenerosapp/",
+      // while real browser URLs keep the "/meudenerosapp" prefix.
+      (function () {
+        var base = "/meudenerosapp";
+        var desc = Object.getOwnPropertyDescriptor(
+          Location.prototype,
+          "pathname",
+        );
+        if (desc && desc.configurable) {
+          Object.defineProperty(Location.prototype, "pathname", {
+            get: function () {
+              var p = desc.get.call(this);
+              return p === base || p.startsWith(base + "/")
+                ? p.slice(base.length) || "/"
+                : p;
+            },
+            configurable: true,
+            enumerable: desc.enumerable,
+          });
+        }
+        var _push = history.pushState.bind(history);
+        var _replace = history.replaceState.bind(history);
+        function addBase(u) {
+          if (
+            !u ||
+            typeof u !== "string" ||
+            u.startsWith("http") ||
+            u === base ||
+            u.startsWith(base + "/")
+          )
+            return u;
+          if (u[0] !== "/") return u;
+          return base + u;
+        }
+        history.pushState = function (s, t, u) {
+          _push(s, t, addBase(u));
+        };
+        history.replaceState = function (s, t, u) {
+          _replace(s, t, addBase(u));
+        };
+      })();
+    </script>
+    <script>
+      /* Pre-React capture listener — registered BEFORE the React bundle so it
+         is first in the document-level capture queue. stopImmediatePropagation()
+         prevents React from ever seeing clicks on our tooltip targets. */
+      (function () {
+        document.addEventListener("click", function (e) {
+          var t = e.target;
+
+          // ── Click on SVG arc path ──────────────────────────────────
+          if (t.tagName && t.tagName.toLowerCase() === "path" &&
+              t.hasAttribute("data-dn-idx")) {
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            e.preventDefault();
+            if (window.dnTip) {
+              window.dnTip.toggle(e, parseInt(t.getAttribute("data-dn-idx"), 10), t);
+            }
+            return;
+          }
+
+          // ── Click on cat-item or its children ─────────────────────
+          var node = t;
+          for (var i = 0; i < 5; i++) {
+            if (!node || node === document.body) break;
+            if (node.hasAttribute && node.hasAttribute("data-dn-idx") &&
+                node.classList && node.classList.contains("dn-cat-item")) {
+              e.stopImmediatePropagation();
+              e.stopPropagation();
+              e.preventDefault();
+              if (window.dnTip) {
+                window.dnTip.toggle(e, parseInt(node.getAttribute("data-dn-idx"), 10), node);
+              }
+              return;
+            }
+            node = node.parentElement;
+          }
+
+          // ── Click inside tooltip → keep it open ───────────────────
+          if (window.dnTip && window.dnTip.el && window.dnTip.el.contains(t)) {
+            return;
+          }
+
+          // ── Anything else → dismiss ────────────────────────────────
+          if (window.dnTip) window.dnTip.hide();
+        }, true); /* capture = true: fires before React's event delegation */
+      })();
+    </script>
+    <script type="module" crossorigin src="./assets/index-q_187w_y.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-zxhbujhn.css" />
+    <style>
+      /* ==========================================
+         Mobile Responsive Overrides
+         ========================================== */
+
+      /* Always hidden until JS activates on mobile */
+      #mob-menu-btn {
+        display: none;
+      }
+
+      @media (max-width: 767px) {
+        /* Sidebar: slide off-screen by default */
+        .w-64.fixed {
+          transform: translateX(-100%);
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          z-index: 100 !important;
+        }
+        /* Sidebar open state */
+        .w-64.fixed.mobile-sidebar-open {
+          transform: translateX(0) !important;
+        }
+
+        /* Remove sidebar margin from main content */
+        .ml-64 {
+          margin-left: 0 !important;
+        }
+
+        /* Reduce main content padding */
+        main.overflow-y-auto {
+          padding: 1rem !important;
+        }
+
+        /* Reduce header side padding */
+        header.h-16 {
+          padding-left: 1rem !important;
+          padding-right: 1rem !important;
+        }
+
+        /* Mobile backdrop overlay */
+        #mob-overlay {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: 99;
+          -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+        }
+        #mob-overlay.open {
+          display: block;
+        }
+
+        /* Hamburger toggle button */
+        #mob-menu-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          min-width: 36px;
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.05);
+          color: #fff;
+          cursor: pointer;
+          flex-shrink: 0;
+          margin-right: 8px;
+          transition: background 0.15s;
+        }
+        #mob-menu-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      /* Force hidden on desktop */
+      @media (min-width: 768px) {
+        #mob-menu-btn {
+          display: none !important;
+        }
+        #mob-overlay {
+          display: none !important;
+        }
+      }
+    </style>
+    <style>
+      /* ==========================================
+         Monthly Overview Widget
+         ========================================== */
+      #dn-overview-widget {
+        font-family: Inter, sans-serif;
+      }
+      #dn-overview-widget .dn-card {
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+      }
+      #dn-overview-widget .dn-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+      }
+      #dn-overview-widget .dn-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: hsl(0, 0%, 96%);
+      }
+      #dn-overview-widget .dn-link {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: hsl(142, 69%, 58%);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        transition: opacity 0.15s;
+      }
+      #dn-overview-widget .dn-link:hover { opacity: 0.75; }
+      #dn-overview-widget .dn-chart-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      #dn-overview-widget .dn-chart-center {
+        position: absolute;
+        text-align: center;
+        pointer-events: none;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #dn-overview-widget .dn-label {
+        font-size: 11px;
+        color: hsl(0, 0%, 50%);
+        margin-bottom: 2px;
+        white-space: nowrap;
+      }
+      #dn-overview-widget .dn-total {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: hsl(0, 0%, 96%);
+        white-space: nowrap;
+      }
+      #dn-overview-widget .dn-top-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      #dn-overview-widget .dn-cat-item {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      #dn-overview-widget .dn-cat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+      #dn-overview-widget .dn-cat-amount {
+        font-weight: 700;
+        font-size: 13px;
+        color: hsl(0, 0%, 96%);
+      }
+      #dn-overview-widget .dn-cat-name {
+        font-size: 11px;
+        color: hsl(0, 0%, 50%);
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 90px;
+      }
+      #dn-overview-widget .dn-empty {
+        text-align: center;
+        color: hsl(0, 0%, 50%);
+        font-size: 14px;
+        padding: 2rem 0;
+      }
+      /* tooltip is injected at body level; styles live here */
+      #dn-cat-tooltip {
+        display: none;
+        position: fixed;
+        z-index: 99999;
+        background: rgba(16, 16, 26, 0.92);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 16px;
+        padding: 14px 20px 12px;
+        text-align: center;
+        min-width: 152px;
+        box-shadow: 0 8px 36px rgba(0, 0, 0, 0.55);
+        font-family: Inter, sans-serif;
+        pointer-events: auto;
+      }
+      #dn-cat-tooltip .dn-tooltip-cat-name {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+      }
+      #dn-cat-tooltip .dn-tooltip-value {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: hsl(0, 0%, 96%);
+        margin-bottom: 10px;
+      }
+      #dn-cat-tooltip .dn-tooltip-link {
+        font-size: 12px;
+        font-weight: 600;
+        color: hsl(142, 69%, 58%);
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        transition: opacity 0.15s;
+      }
+      #dn-cat-tooltip .dn-tooltip-link:hover { opacity: 0.72; }
+      #dn-overview-widget svg path[data-dn-idx] { cursor: pointer; transition: opacity 0.15s; }
+      #dn-overview-widget svg path[data-dn-idx]:hover { opacity: 0.75; }
+    </style>
+=======
 
     <script type="module" crossorigin src="./assets/index-q_187w_y.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-zxhbujhn.css" />
@@ -597,9 +932,334 @@
         padding: 2rem 0;
       }
     </style>
+>>>>>>> 0d1ff37635fe32f6df2a0679ea22f7768c97df38
   </head>
   <body>
     <div id="root"></div>
+<<<<<<< HEAD
+    <script>
+      /* ==========================================
+         Monthly Overview Widget
+         ========================================== */
+      (function () {
+        "use strict";
+
+        var MONTH_NAMES = [
+          "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+          "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
+        ];
+        var PALETTE = [
+          "#4ade80","#fb923c","#60a5fa","#a78bfa","#f472b6",
+          "#facc15","#34d399","#f87171","#818cf8","#2dd4bf",
+        ];
+
+        function fmtBRL(n) {
+          return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        }
+
+        function getMonthData() {
+          var now = new Date();
+          var year = now.getFullYear();
+          var month = now.getMonth();
+          var transactions = [], categories = [];
+          try { transactions = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
+          try { categories = JSON.parse(localStorage.getItem("finance_categories") || "[]"); } catch (e) {}
+
+          var expenses = transactions.filter(function (t) {
+            if (t.type !== "expense") return false;
+            var d = new Date(t.date);
+            return d.getFullYear() === year && d.getMonth() === month;
+          });
+
+          var byCategory = {};
+          expenses.forEach(function (t) {
+            var id = t.categoryId || "__none__";
+            if (!byCategory[id]) {
+              var cat = categories.find(function (c) { return c.id === id; });
+              byCategory[id] = { id: id, name: (cat && cat.name) || t.categoryName || "Outros", total: 0 };
+            }
+            byCategory[id].total += t.amount;
+          });
+
+          var sorted = Object.values(byCategory).sort(function (a, b) { return b.total - a.total; });
+          var total = sorted.reduce(function (s, c) { return s + c.total; }, 0);
+          return { sorted: sorted, total: total, monthName: MONTH_NAMES[month] };
+        }
+
+        function polarXY(cx, cy, r, angleDeg) {
+          var rad = (angleDeg - 90) * Math.PI / 180;
+          return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+        }
+
+        function buildSVG(sorted, total) {
+          if (!total) return "";
+          var cx = 100, cy = 100, r = 70, sw = 22, gap = 2.5;
+          var currentAngle = 0;
+          var arcs = "";
+          sorted.forEach(function (seg, i) {
+            var pct = seg.total / total;
+            var sweep = pct * 360 - gap;
+            if (sweep <= 0) return;
+            var s = polarXY(cx, cy, r, currentAngle);
+            var e = polarXY(cx, cy, r, currentAngle + sweep);
+            var large = sweep > 180 ? 1 : 0;
+            arcs += '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
+              ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
+              e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
+              ' fill="none" stroke="' + PALETTE[i % PALETTE.length] + '"' +
+              ' stroke-width="' + sw + '" stroke-linecap="round"' +
+              ' data-dn-idx="' + i + '" style="cursor:pointer;"/>';
+            currentAngle += pct * 360;
+          });
+          return '<svg viewBox="0 0 200 200" width="184" height="184" style="display:block;flex-shrink:0;">' +
+            '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none"' +
+            ' stroke="rgba(255,255,255,0.05)" stroke-width="' + sw + '"/>' +
+            arcs + '</svg>';
+        }
+
+        function buildWidget() {
+          var data = getMonthData();
+          var sorted = data.sorted, total = data.total, monthName = data.monthName;
+          var top3 = sorted.slice(0, 3);
+          var svg = buildSVG(sorted, total);
+
+          var topHtml = top3.map(function (cat, i) {
+            var color = PALETTE[i % PALETTE.length];
+            var init = cat.name.charAt(0).toUpperCase();
+            return '<div class="dn-cat-item" data-dn-idx="' + i + '" style="cursor:pointer;">' +
+              '<div class="dn-cat-icon" style="background:' + color + '1a;border:1px solid ' + color + '33;color:' + color + ';">' + init + '</div>' +
+              '<span class="dn-cat-amount">' + fmtBRL(cat.total) + '</span>' +
+              '<span class="dn-cat-name">' + cat.name + '</span>' +
+              '</div>';
+          }).join("");
+
+          var body = sorted.length === 0
+            ? '<p class="dn-empty">Nenhuma despesa registrada em ' + monthName + '.</p>'
+            : '<div class="dn-chart-wrap">' + svg +
+              '<div class="dn-chart-center">' +
+              '<div class="dn-label">Gastos por categoria</div>' +
+              '<div class="dn-total">' + fmtBRL(total) + '</div>' +
+              '</div>' +
+              '</div>' +
+              (top3.length ? '<div class="dn-top-row">' + topHtml + '</div>' : '');
+
+          var el = document.createElement("div");
+          el.id = "dn-overview-widget";
+          el.innerHTML =
+            '<div class="glass-panel dn-card">' +
+              '<div class="dn-header">' +
+                '<h3 class="dn-title">Gastos de ' + monthName + '</h3>' +
+                '<button class="dn-link" id="dn-analyze-btn">' +
+                  'Analisar <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+                '</button>' +
+              '</div>' +
+              body +
+            '</div>';
+
+          el.querySelector("#dn-analyze-btn").addEventListener("click", function () {
+            history.pushState(null, "", "/categories");
+            window.dispatchEvent(new PopStateEvent("popstate"));
+          });
+
+          // ── Global tooltip object (inline onclick bypasses React entirely) ──
+          var old = document.getElementById("dn-cat-tooltip");
+          if (old) old.remove();
+
+          var tip = document.createElement("div");
+          tip.id = "dn-cat-tooltip";
+          tip.onclick = function (e) { e.stopPropagation(); };
+          tip.innerHTML =
+            '<div class="dn-tooltip-cat-name" id="dn-tip-name"></div>' +
+            '<div class="dn-tooltip-value" id="dn-tip-val"></div>' +
+            '<button class="dn-tooltip-link" id="dn-tip-link">ver categoria ' +
+              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+            '</button>';
+          document.body.appendChild(tip);
+
+          window.dnTip = {
+            active: -1,
+            sorted: sorted,
+            el: tip,
+            toggle: function (e, idx, anchor) {
+              e.stopPropagation();
+              e.preventDefault();
+              if (this.active === idx && tip.style.display === "block") {
+                this.hide();
+              } else {
+                this.show(idx, anchor);
+              }
+            },
+            show: function (idx, anchor) {
+              var cat = this.sorted[idx];
+              if (!cat) return;
+              this.active = idx;
+              var color = PALETTE[idx % PALETTE.length];
+              document.getElementById("dn-tip-name").textContent = cat.name;
+              document.getElementById("dn-tip-name").style.color = color;
+              document.getElementById("dn-tip-val").textContent = fmtBRL(cat.total);
+              // position near anchor
+              var rc = anchor.getBoundingClientRect();
+              var cx = rc.left + rc.width / 2;
+              var cy = rc.top + rc.height / 2;
+              var tw = 164;
+              var left = Math.max(8, Math.min(cx - tw / 2, window.innerWidth - tw - 8));
+              var top = cy - 80;
+              if (top < 60) top = cy + 16;
+              tip.style.left = left + "px";
+              tip.style.top  = top + "px";
+              tip.style.display = "block";
+            },
+            hide: function () {
+              tip.style.display = "none";
+              this.active = -1;
+            }
+          };
+
+          document.getElementById("dn-tip-link").onclick = function (e) {
+            e.stopPropagation();
+            var cat = window.dnTip.sorted[window.dnTip.active];
+            var dest = (cat && cat.id && cat.id !== "__none__")
+              ? "/categories/" + cat.id
+              : "/categories";
+            window.dnTip.hide();
+            history.pushState(null, "", dest);
+            window.dispatchEvent(new PopStateEvent("popstate"));
+          };
+
+          window.addEventListener("popstate", function () {
+            if (window.dnTip) window.dnTip.hide();
+          });
+
+          return el;
+        }
+
+        var _injecting = false;
+
+        function tryInject() {
+          if (_injecting) return;
+          if (document.getElementById("dn-overview-widget")) return;
+          var path = window.location.pathname;
+          if (path !== "/" && path !== "") return;
+
+          // Confirm we're on the dashboard by checking for "Atividade Recente"
+          var h3s = document.querySelectorAll("h3");
+          var recentHeader = null;
+          for (var i = 0; i < h3s.length; i++) {
+            if (h3s[i].textContent.trim() === "Atividade Recente") { recentHeader = h3s[i]; break; }
+          }
+          if (!recentHeader) return;
+
+          // Walk up to space-y-8 container
+          var container = recentHeader.parentElement;
+          while (container && !container.classList.contains("space-y-8")) {
+            container = container.parentElement;
+          }
+          if (!container || container.children.length < 2) return;
+
+          _injecting = true;
+          var widget = buildWidget();
+          // Insert between first child (stat cards) and second child (activity grid)
+          container.insertBefore(widget, container.children[1]);
+          _injecting = false;
+        }
+
+        // Debounce helper
+        function debounce(fn, ms) {
+          var t;
+          return function () { clearTimeout(t); t = setTimeout(fn, ms); };
+        }
+
+        var debouncedInject = debounce(tryInject, 250);
+
+        // MutationObserver to react to React renders and SPA navigation
+        var observer = new MutationObserver(function (mutations) {
+          // If our widget was removed, re-inject
+          var widgetGone = !document.getElementById("dn-overview-widget");
+          if (widgetGone) debouncedInject();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Initial delayed inject (wait for React to render)
+        setTimeout(tryInject, 600);
+        setTimeout(tryInject, 1500);
+      })();
+    </script>
+    <script>
+      (function () {
+        // Create backdrop overlay element
+        var ov = document.createElement("div");
+        ov.id = "mob-overlay";
+        document.body.appendChild(ov);
+
+        var sidebar = null;
+        var isOpen = false;
+
+        function openMenu() {
+          if (!sidebar) return;
+          isOpen = true;
+          sidebar.classList.add("mobile-sidebar-open");
+          ov.classList.add("open");
+        }
+
+        function closeMenu() {
+          if (!sidebar) return;
+          isOpen = false;
+          sidebar.classList.remove("mobile-sidebar-open");
+          ov.classList.remove("open");
+        }
+
+        function init() {
+          sidebar = document.querySelector(".w-64.fixed");
+          var header = document.querySelector("header.h-16");
+          if (!sidebar || !header || document.getElementById("mob-menu-btn"))
+            return;
+
+          // Inject hamburger button before header title
+          var btn = document.createElement("button");
+          btn.id = "mob-menu-btn";
+          btn.setAttribute("aria-label", "Menu");
+          btn.innerHTML =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+          header.insertBefore(btn, header.firstChild);
+
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            isOpen ? closeMenu() : openMenu();
+          });
+
+          ov.addEventListener("click", closeMenu);
+
+          // Close when a nav link is clicked inside the sidebar (SPA navigation)
+          sidebar.addEventListener("click", function (e) {
+            if (window.innerWidth < 768 && isOpen && e.target.closest("a")) {
+              setTimeout(closeMenu, 200);
+            }
+          });
+
+          // Close on resize to desktop
+          window.addEventListener("resize", function () {
+            if (window.innerWidth >= 768) closeMenu();
+          });
+        }
+
+        // Poll until React renders the sidebar and header
+        var poll = setInterval(function () {
+          if (
+            document.querySelector(".w-64.fixed") &&
+            document.querySelector("header.h-16")
+          ) {
+            clearInterval(poll);
+            init();
+          }
+        }, 100);
+
+        // Stop polling after 10 seconds
+        setTimeout(function () {
+          clearInterval(poll);
+        }, 10000);
+      })();
+    </script>
+=======
     <script>
       /* ==========================================
          Monthly Overview Widget
@@ -2449,5 +3109,6 @@
         setTimeout(colorIcons, 1500);
       })();
     </script>
+>>>>>>> 0d1ff37635fe32f6df2a0679ea22f7768c97df38
   </body>
 </html>
