@@ -517,8 +517,8 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        width: 280px;
-        height: 280px;
+        width: 300px;
+        height: 300px;
         margin: 0 auto;
       }
       #dn-overview-widget .dn-chart-wrap svg {
@@ -700,38 +700,53 @@
 
         function buildSVG(sorted, total) {
           if (!total) return "";
-          // r=96 leaves ~44px clear on each side of viewBox 280 for the badge circles
-          var size = 280, cx = 140, cy = 140, r = 96, sw = 22;
-          var GAP = 5; // gap in degrees between segments (room for rounded caps)
-          var capR = sw / 2 - 0.5; // radius of the rounded end circles
+          var size = 300, cx = 150, cy = 150, r = 118, sw = 22;
+          // Mathematical gap: with stroke-linecap="round", each cap extends
+          // arcsin(sw/2 / r) degrees beyond the arc endpoint.
+          // Shrink the arc by that amount on each side so the visual gap is exact.
+          var capAngleDeg = Math.asin((sw / 2) / r) * (180 / Math.PI);
+          var visualGap = 6; // desired visible gap in degrees between segments
           var currentAngle = 0;
-          var arcs = "", caps = "", badges = "";
+          var arcs = "", badges = "";
           var count = sorted.length;
           sorted.forEach(function (seg, i) {
             var pct = seg.total / total;
             var totalSweep = pct * 360;
-            var usedSweep = count > 1
-              ? Math.max(totalSweep - GAP, Math.min(totalSweep, 4))
-              : totalSweep;
-            if (usedSweep <= 0) { currentAngle += totalSweep; return; }
             var color = PALETTE[i % PALETTE.length];
-            var s = polarXY(cx, cy, r, currentAngle);
-            var e = polarXY(cx, cy, r, currentAngle + usedSweep);
-            var large = usedSweep > 180 ? 1 : 0;
-            // Main arc (butt so caps don't bleed)
-            arcs += '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
-              ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
-              e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
-              ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="butt"/>';
-            // Rounded caps as filled circles at each endpoint
-            caps += '<circle cx="' + s[0].toFixed(2) + '" cy="' + s[1].toFixed(2) + '" r="' + capR + '" fill="' + color + '"/>';
-            caps += '<circle cx="' + e[0].toFixed(2) + '" cy="' + e[1].toFixed(2) + '" r="' + capR + '" fill="' + color + '"/>';
-            // Badge (initial letter) at midpoint of the segment — only if sweep is wide enough
-            if (totalSweep >= 18) {
+            if (count > 1) {
+              // Shrink arc so round caps land exactly at the gap boundary
+              var arcSweep = totalSweep - visualGap - 2 * capAngleDeg;
+              if (arcSweep <= 0) {
+                // Slice too small for full arc+gap: render a dot at the midpoint
+                var mp = polarXY(cx, cy, r, currentAngle + totalSweep / 2);
+                arcs += '<circle cx="' + mp[0].toFixed(2) + '" cy="' + mp[1].toFixed(2) +
+                  '" r="' + (sw / 2) + '" fill="' + color + '"/>';
+                currentAngle += totalSweep;
+                return;
+              }
+              var arcStart = currentAngle + visualGap / 2 + capAngleDeg;
+              var s = polarXY(cx, cy, r, arcStart);
+              var e = polarXY(cx, cy, r, arcStart + arcSweep);
+              var large = arcSweep > 180 ? 1 : 0;
+              arcs += '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
+                ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
+                e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
+                ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
+            } else {
+              // Single segment: full circle, no gap needed
+              var s = polarXY(cx, cy, r, currentAngle);
+              var e = polarXY(cx, cy, r, currentAngle + 359.99);
+              arcs += '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
+                ' A ' + r + ' ' + r + ' 0 1 1 ' +
+                e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
+                ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
+            }
+            // Badge: initial letter at arc midpoint (only if slice >= 22deg)
+            if (totalSweep >= 22) {
               var midAngle = currentAngle + totalSweep / 2;
               var bp = polarXY(cx, cy, r, midAngle);
               var letter = seg.name.charAt(0).toUpperCase();
-              badges += '<circle cx="' + bp[0].toFixed(2) + '" cy="' + bp[1].toFixed(2) + '" r="12" fill="rgba(0,0,0,0.6)"/>';
+              badges += '<circle cx="' + bp[0].toFixed(2) + '" cy="' + bp[1].toFixed(2) + '" r="13" fill="rgba(0,0,0,0.55)"/>';
               badges += '<text x="' + bp[0].toFixed(2) + '" y="' + bp[1].toFixed(2) + '"' +
                 ' text-anchor="middle" dominant-baseline="central"' +
                 ' font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#fff">' +
@@ -740,21 +755,10 @@
             currentAngle += totalSweep;
           });
           return (
-            '<svg viewBox="0 0 ' +
-            size +
-            " " +
-            size +
-            '" style="display:block;width:100%;height:100%;">' +
-            '<circle cx="' +
-            cx +
-            '" cy="' +
-            cy +
-            '" r="' +
-            r +
-            '" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="' +
-            sw +
-            '"/>' +
-            arcs + caps + badges + "</svg>"
+            '<svg viewBox="0 0 ' + size + ' ' + size + '" style="display:block;width:100%;height:100%;">' +
+            '<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
+            '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="' + sw + '"/>' +
+            arcs + badges + '</svg>'
           );
         }
 
