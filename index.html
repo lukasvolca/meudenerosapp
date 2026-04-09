@@ -2102,7 +2102,11 @@
 
           // Compute net balance per category directly from localStorage
           var allTxs = [];
-          try { allTxs = JSON.parse(localStorage.getItem("finance_transactions") || "[]"); } catch (e) {}
+          try {
+            allTxs = JSON.parse(
+              localStorage.getItem("finance_transactions") || "[]",
+            );
+          } catch (e) {}
           var netBalance = {};
           allTxs.forEach(function (t) {
             var name = t.categoryName || "";
@@ -2135,15 +2139,32 @@
 
             var net = netBalance[name] !== undefined ? netBalance[name] : null;
             var isExpense = net !== null && net < 0;
-            var isIncome  = net !== null && net >= 0;
-            var iconColor  = isExpense ? "rgb(239,68,68)"  : isIncome ? "rgb(74,222,128)" : "rgba(255,255,255,0.5)";
-            var iconBg     = isExpense ? "rgba(239,68,68,0.12)" : isIncome ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.08)";
+            var isIncome = net !== null && net >= 0;
+            var iconColor = isExpense
+              ? "rgb(239,68,68)"
+              : isIncome
+                ? "rgb(74,222,128)"
+                : "rgba(255,255,255,0.5)";
+            var iconBg = isExpense
+              ? "rgba(239,68,68,0.12)"
+              : isIncome
+                ? "rgba(74,222,128,0.12)"
+                : "rgba(255,255,255,0.08)";
             var amountHtml = "";
             if (net !== null && net !== 0) {
               var absStr = formatBRL(Math.abs(net));
-              var sign   = net < 0 ? "-\u00a0" : "+\u00a0";
-              var amtColor = net < 0 ? "color:rgba(239,68,68,0.8)" : "color:rgba(74,222,128,0.8)";
-              amountHtml = '<div class="cat-row-total" style="' + amtColor + '">' + sign + absStr + '</div>';
+              var sign = net < 0 ? "-\u00a0" : "+\u00a0";
+              var amtColor =
+                net < 0
+                  ? "color:rgba(239,68,68,0.8)"
+                  : "color:rgba(74,222,128,0.8)";
+              amountHtml =
+                '<div class="cat-row-total" style="' +
+                amtColor +
+                '">' +
+                sign +
+                absStr +
+                "</div>";
             }
 
             var row = document.createElement("div");
@@ -2168,6 +2189,9 @@
               if (innerIconDiv) {
                 innerIconDiv.style.background = iconBg;
                 innerIconDiv.style.color = iconColor;
+                // Force SVG color - overrides Tailwind text-primary class
+                var svg = innerIconDiv.querySelector("svg");
+                if (svg) svg.style.color = iconColor;
               }
               // Tap icon to change it
               iconDiv.addEventListener("click", function (e) {
@@ -2251,15 +2275,19 @@
         background: rgba(239, 68, 68, 0.12) !important;
         color: rgb(239, 68, 68) !important;
       }
-      [data-dn-type="expense"] svg {
+      [data-dn-type="expense"] svg,
+      [data-dn-type="expense"] svg * {
         color: rgb(239, 68, 68) !important;
+        stroke: rgb(239, 68, 68) !important;
       }
       [data-dn-type="income"] {
         background: rgba(74, 222, 128, 0.12) !important;
         color: rgb(74, 222, 128) !important;
       }
-      [data-dn-type="income"] svg {
+      [data-dn-type="income"] svg,
+      [data-dn-type="income"] svg * {
         color: rgb(74, 222, 128) !important;
+        stroke: rgb(74, 222, 128) !important;
       }
     </style>
     <script>
@@ -2304,7 +2332,10 @@
               }
             }
             if (!sibling) return;
-            var nameEl = sibling.querySelector("p");
+            // Transaction list: category name is in span.text-xs.text-muted-foreground
+            // Dashboard summary: category name is in p (first child)
+            var nameEl = sibling.querySelector("span.text-xs.text-muted-foreground") ||
+                         sibling.querySelector("p");
             if (!nameEl) return;
             var catName = nameEl.textContent.trim();
             if (!catName || catName === "Sem categoria") return;
