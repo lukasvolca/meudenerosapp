@@ -2241,32 +2241,15 @@
             wrapper.setAttribute("data-cat-pill", catId);
 
             var net = netBalance[name] !== undefined ? netBalance[name] : null;
-            var isExpense = net !== null && net < 0;
-            var isIncome = net !== null && net >= 0;
-            var iconColor = isExpense
-              ? "rgb(239,68,68)"
-              : isIncome
-                ? "rgb(74,222,128)"
-                : "rgba(255,255,255,0.5)";
-            var iconBg = isExpense
-              ? "rgba(239,68,68,0.12)"
-              : isIncome
-                ? "rgba(74,222,128,0.12)"
-                : "rgba(255,255,255,0.08)";
+            // netBalance holds expense totals for the selected month (always positive)
+            var hasExpense = net !== null && net > 0;
+            var iconColor = hasExpense ? "rgb(239,68,68)" : "rgba(255,255,255,0.5)";
+            var iconBg    = hasExpense ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.08)";
             var amountHtml = "";
-            if (net !== null && net !== 0) {
-              var absStr = formatBRL(Math.abs(net));
-              var sign = net < 0 ? "-\u00a0" : "+\u00a0";
-              var amtColor =
-                net < 0
-                  ? "color:rgba(239,68,68,0.8)"
-                  : "color:rgba(74,222,128,0.8)";
+            if (hasExpense) {
               amountHtml =
-                '<div class="cat-row-total" style="' +
-                amtColor +
-                '">' +
-                sign +
-                absStr +
+                '<div class="cat-row-total" style="color:rgba(239,68,68,0.8);">' +
+                "-\u00a0" + formatBRL(net) +
                 "</div>";
             }
 
