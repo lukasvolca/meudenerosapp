@@ -701,64 +701,69 @@
         function buildSVG(sorted, total) {
           if (!total) return "";
           var size = 300, cx = 150, cy = 150, r = 118, sw = 22;
-          // Mathematical gap: with stroke-linecap="round", each cap extends
-          // arcsin(sw/2 / r) degrees beyond the arc endpoint.
-          // Shrink the arc by that amount on each side so the visual gap is exact.
           var capAngleDeg = Math.asin((sw / 2) / r) * (180 / Math.PI);
-          var visualGap = 6; // desired visible gap in degrees between segments
+          var visualGap = 6;
           var currentAngle = 0;
-          var arcs = "", badges = "";
+          var segments = "";
           var count = sorted.length;
           sorted.forEach(function (seg, i) {
             var pct = seg.total / total;
             var totalSweep = pct * 360;
             var color = PALETTE[i % PALETTE.length];
+            var arc = "", badge = "";
             if (count > 1) {
-              // Shrink arc so round caps land exactly at the gap boundary
               var arcSweep = totalSweep - visualGap - 2 * capAngleDeg;
               if (arcSweep <= 0) {
-                // Slice too small for full arc+gap: render a dot at the midpoint
                 var mp = polarXY(cx, cy, r, currentAngle + totalSweep / 2);
-                arcs += '<circle cx="' + mp[0].toFixed(2) + '" cy="' + mp[1].toFixed(2) +
+                arc = '<circle cx="' + mp[0].toFixed(2) + '" cy="' + mp[1].toFixed(2) +
                   '" r="' + (sw / 2) + '" fill="' + color + '"/>';
-                currentAngle += totalSweep;
-                return;
+              } else {
+                var arcStart = currentAngle + visualGap / 2 + capAngleDeg;
+                var s = polarXY(cx, cy, r, arcStart);
+                var e = polarXY(cx, cy, r, arcStart + arcSweep);
+                var large = arcSweep > 180 ? 1 : 0;
+                arc = '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
+                  ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
+                  e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
+                  ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
               }
-              var arcStart = currentAngle + visualGap / 2 + capAngleDeg;
-              var s = polarXY(cx, cy, r, arcStart);
-              var e = polarXY(cx, cy, r, arcStart + arcSweep);
-              var large = arcSweep > 180 ? 1 : 0;
-              arcs += '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
-                ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' +
-                e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
-                ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
             } else {
-              // Single segment: full circle, no gap needed
               var s = polarXY(cx, cy, r, currentAngle);
               var e = polarXY(cx, cy, r, currentAngle + 359.99);
-              arcs += '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
+              arc = '<path d="M ' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) +
                 ' A ' + r + ' ' + r + ' 0 1 1 ' +
                 e[0].toFixed(2) + ' ' + e[1].toFixed(2) + '"' +
                 ' fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"/>';
             }
-            // Badge: initial letter at arc midpoint (only if slice >= 22deg)
+            // Invisible wider hit area over the arc for easier tapping
+            var hitSweep = Math.max(totalSweep - visualGap, 1);
+            var hitStart = currentAngle + visualGap / 2;
+            var hs = polarXY(cx, cy, r, hitStart);
+            var he = polarXY(cx, cy, r, hitStart + hitSweep);
+            var hitLarge = hitSweep > 180 ? 1 : 0;
+            var hit = '<path d="M ' + hs[0].toFixed(2) + ' ' + hs[1].toFixed(2) +
+              ' A ' + r + ' ' + r + ' 0 ' + hitLarge + ' 1 ' +
+              he[0].toFixed(2) + ' ' + he[1].toFixed(2) + '"' +
+              ' fill="none" stroke="transparent" stroke-width="' + (sw + 16) + '" stroke-linecap="butt"/>';
             if (totalSweep >= 22) {
               var midAngle = currentAngle + totalSweep / 2;
               var bp = polarXY(cx, cy, r, midAngle);
               var letter = seg.name.charAt(0).toUpperCase();
-              badges += '<circle cx="' + bp[0].toFixed(2) + '" cy="' + bp[1].toFixed(2) + '" r="13" fill="rgba(0,0,0,0.55)"/>';
-              badges += '<text x="' + bp[0].toFixed(2) + '" y="' + bp[1].toFixed(2) + '"' +
+              badge = '<circle cx="' + bp[0].toFixed(2) + '" cy="' + bp[1].toFixed(2) + '" r="13" fill="rgba(0,0,0,0.55)"/>' +
+                '<text x="' + bp[0].toFixed(2) + '" y="' + bp[1].toFixed(2) + '"' +
                 ' text-anchor="middle" dominant-baseline="central"' +
                 ' font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#fff">' +
                 letter + '</text>';
             }
+            // Wrap arc + hit area + badge in a group with data-catid for click navigation
+            segments += '<g data-catid="' + seg.id + '" style="cursor:pointer">' + arc + hit + badge + '</g>';
             currentAngle += totalSweep;
           });
           return (
             '<svg viewBox="0 0 ' + size + ' ' + size + '" style="display:block;width:100%;height:100%;">' +
             '<circle cx="' + cx + '" cy="' + cy + '" r="' + r +
             '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="' + sw + '"/>' +
-            arcs + badges + '</svg>'
+            segments + '</svg>'
           );
         }
 
@@ -803,7 +808,7 @@
                 ".</p>"
               : '<div class="dn-chart-wrap">' +
                 '<div class="dn-chart-center">' +
-                '<div class="dn-label">Total no mês</div>' +
+                '<div class="dn-label">Gastos por categoria</div>' +
                 '<div class="dn-total">' +
                 fmtBRL(total) +
                 "</div>" +
@@ -831,7 +836,6 @@
           el.querySelector("#dn-analyze-btn").addEventListener(
             "click",
             function () {
-              // Detect base path for GitHub Pages vs custom domain
               var base = window.location.pathname.match(/^(\/meudenerosapp)/)
                 ? "/meudenerosapp"
                 : "";
@@ -839,6 +843,19 @@
               window.dispatchEvent(new PopStateEvent("popstate"));
             },
           );
+
+          // Slice click: navigate to categories page with selected category
+          el.querySelectorAll("svg [data-catid]").forEach(function (g) {
+            g.addEventListener("click", function () {
+              var catId = g.getAttribute("data-catid");
+              var base = window.location.pathname.match(/^(\/meudenerosapp)/)
+                ? "/meudenerosapp"
+                : "";
+              try { sessionStorage.setItem("dn_selected_cat", catId); } catch (e) {}
+              history.pushState(null, "", base + "/categories");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            });
+          });
 
           return el;
         }
