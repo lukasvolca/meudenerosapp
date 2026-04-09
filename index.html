@@ -642,9 +642,64 @@
         }
 
         function getMonthData() {
-          var now = new Date();
-          var year = now.getFullYear();
-          var month = now.getMonth();
+          // Read the currently selected month from the header span
+          // The app renders: <span class="font-semibold ...">abril 2026</span>
+          // (or abbreviated form "abr 2026" after our mobile tweak)
+          var year, month;
+          var headerSpan = document.querySelector(
+            "header.h-16 span.font-semibold",
+          );
+          if (headerSpan) {
+            var txt = (headerSpan.textContent || "").trim().toLowerCase();
+            // Expand abbreviations back to full month names for matching
+            var abbrevMap = {
+              jan: "janeiro",
+              fev: "fevereiro",
+              mar: "março",
+              abr: "abril",
+              mai: "maio",
+              jun: "junho",
+              jul: "julho",
+              ago: "agosto",
+              set: "setembro",
+              out: "outubro",
+              nov: "novembro",
+              dez: "dezembro",
+            };
+            // Replace abbreviation at start if found
+            for (var abbr in abbrevMap) {
+              if (txt.startsWith(abbr + " ")) {
+                txt = abbrevMap[abbr] + txt.slice(abbr.length);
+                break;
+              }
+            }
+            var parts = txt.split(" ");
+            var monthNames = [
+              "janeiro",
+              "fevereiro",
+              "março",
+              "abril",
+              "maio",
+              "junho",
+              "julho",
+              "agosto",
+              "setembro",
+              "outubro",
+              "novembro",
+              "dezembro",
+            ];
+            var mi = monthNames.indexOf(parts[0]);
+            var yi = parseInt(parts[1], 10);
+            if (mi !== -1 && !isNaN(yi)) {
+              month = mi;
+              year = yi;
+            }
+          }
+          if (month === undefined) {
+            var now = new Date();
+            year = now.getFullYear();
+            month = now.getMonth();
+          }
           var transactions = [],
             categories = [];
           try {
@@ -976,26 +1031,45 @@
 
         var _injecting = false;
 
+        var _lastWidgetMonth = null;
+
         function tryInject() {
           if (_injecting) return;
 
           if (!onDashboard()) {
             var dead = document.getElementById("dn-overview-widget");
             if (dead) dead.remove();
+            _lastWidgetMonth = null;
             return;
           }
 
+          // Detect the currently shown month from the header span
+          var headerSpan = document.querySelector(
+            "header.h-16 span.font-semibold",
+          );
+          var currentMonthKey = headerSpan
+            ? headerSpan.textContent.trim()
+            : null;
+
           var existing = document.getElementById("dn-overview-widget");
-          if (existing && existing.querySelector(".dn-card")) return;
-          if (existing) existing.remove();
+          // Rebuild if widget missing OR month changed
+          if (existing && existing.querySelector(".dn-card")) {
+            if (currentMonthKey && currentMonthKey !== _lastWidgetMonth) {
+              existing.remove();
+            } else {
+              return;
+            }
+          }
+          if (existing && !existing.querySelector(".dn-card"))
+            existing.remove();
 
           var main = getMain();
           if (!main || !main.firstElementChild) return;
 
           _injecting = true;
           var widget = buildWidget();
-          // Insert before React's div — outside the React fiber tree
           main.insertBefore(widget, main.firstElementChild);
+          _lastWidgetMonth = currentMonthKey;
           _injecting = false;
         }
 
@@ -2334,8 +2408,9 @@
             if (!sibling) return;
             // Transaction list: category name is in span.text-xs.text-muted-foreground
             // Dashboard summary: category name is in p (first child)
-            var nameEl = sibling.querySelector("span.text-xs.text-muted-foreground") ||
-                         sibling.querySelector("p");
+            var nameEl =
+              sibling.querySelector("span.text-xs.text-muted-foreground") ||
+              sibling.querySelector("p");
             if (!nameEl) return;
             var catName = nameEl.textContent.trim();
             if (!catName || catName === "Sem categoria") return;
