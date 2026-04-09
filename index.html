@@ -1085,8 +1085,7 @@
 
         var observer = new MutationObserver(function () {
           if (!onDashboard()) return;
-          var w = document.getElementById("dn-overview-widget");
-          if (!w || !w.querySelector(".dn-card")) debouncedInject();
+          debouncedInject(); // tryInject handles early-return if nothing changed
         });
         observer.observe(document.body, { childList: true, subtree: true });
 
@@ -1904,10 +1903,27 @@
           "Dezembro",
         ];
 
+        function getSelectedMonth() {
+          var span = document.querySelector("header.h-16 .rounded-full span");
+          if (span) {
+            var txt = span.textContent.trim();
+            var parts = txt.split(" ");
+            if (parts.length === 2) {
+              var yr = parseInt(parts[1]);
+              var mo3 = parts[0].slice(0, 3).toLowerCase();
+              var lc = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+              var mi = lc.indexOf(mo3);
+              if (!isNaN(yr) && mi !== -1) return { year: yr, month: mi };
+            }
+          }
+          var n = new Date();
+          return { year: n.getFullYear(), month: n.getMonth() };
+        }
+
         function openCatDetail(catName, iconHtml) {
-          var now = new Date();
-          var curY = now.getFullYear(),
-            curM = now.getMonth();
+          var sel = getSelectedMonth();
+          var curY = sel.year,
+            curM = sel.month;
           var monthLabel = MONTHS_FULL[curM];
 
           // Read localStorage
@@ -2174,19 +2190,32 @@
           while (listEl.children.length > 1)
             listEl.removeChild(listEl.lastChild);
 
-          // Compute net balance per category directly from localStorage
+          // Compute expense totals per category for the selected month from localStorage
+          var sel = getSelectedMonth();
           var allTxs = [];
+          var allCats = [];
           try {
             allTxs = JSON.parse(
               localStorage.getItem("finance_transactions") || "[]",
             );
           } catch (e) {}
+          try {
+            allCats = JSON.parse(
+              localStorage.getItem("finance_categories") || "[]",
+            );
+          } catch (e) {}
           var netBalance = {};
           allTxs.forEach(function (t) {
-            var name = t.categoryName || "";
-            if (!name) return;
-            if (netBalance[name] === undefined) netBalance[name] = 0;
-            netBalance[name] += t.type === "income" ? t.amount : -t.amount;
+            if (t.type !== "expense") return;
+            var td = new Date(t.date);
+            if (td.getFullYear() !== sel.year || td.getMonth() !== sel.month) return;
+            var catName = t.categoryName || "";
+            if (!catName && t.categoryId) {
+              var cat = allCats.find(function (c) { return c.id === t.categoryId; });
+              if (cat) catName = cat.name;
+            }
+            if (!catName) return;
+            netBalance[catName] = (netBalance[catName] || 0) + t.amount;
           });
 
           pills.forEach(function (wrapper) {
