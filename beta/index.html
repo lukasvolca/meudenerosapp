@@ -113,7 +113,7 @@
     <link
       rel="stylesheet"
       crossorigin
-      href="/meudenerosapp/assets/index-zxhbujhn.css"
+      href="/meudenerosapp/beta/assets/index-zxhbujhn.css"
     />
     <style>
       /* ==========================================
@@ -812,6 +812,17 @@
         setTimeout(function () {
           clearInterval(poll);
         }, 10000);
+
+        // Re-inject hamburger if React re-renders the header (SPA navigation)
+        new MutationObserver(function () {
+          if (
+            document.querySelector(".w-64.fixed") &&
+            document.querySelector("header.h-16") &&
+            !document.getElementById("mob-menu-btn")
+          ) {
+            init();
+          }
+        }).observe(document.body, { childList: true, subtree: true });
       })();
     </script>
   </body>
