@@ -35,8 +35,54 @@
         }
       })(window.location);
     </script>
+    <script>
+      // GitHub Pages beta subpath fix:
+      // The Wouter router was compiled with base="/meudenerosapp".
+      // Real URL:  /meudenerosapp/beta/X
+      // Router expects:  /meudenerosapp/X
+      // This patch translates between the two spaces.
+      (function () {
+        var urlBase = "/meudenerosapp/beta"; // real URL prefix
+        var appBase = "/meudenerosapp"; // what the router expects
 
+        // pathname getter: URL space → app space
+        var desc = Object.getOwnPropertyDescriptor(
+          Location.prototype,
+          "pathname",
+        );
+        if (desc && desc.configurable) {
+          Object.defineProperty(Location.prototype, "pathname", {
+            get: function () {
+              var p = desc.get.call(this);
+              if (p === urlBase) return appBase;
+              if (p.startsWith(urlBase + "/"))
+                return appBase + p.slice(urlBase.length);
+              return p;
+            },
+            configurable: true,
+            enumerable: desc.enumerable,
+          });
+        }
 
+        // pushState / replaceState: app space → URL space
+        var _push = history.pushState.bind(history);
+        var _replace = history.replaceState.bind(history);
+        function toUrlSpace(u) {
+          if (!u || typeof u !== "string" || u.startsWith("http")) return u;
+          if (u === urlBase || u.startsWith(urlBase + "/")) return u; // already correct
+          if (u === appBase) return urlBase;
+          if (u.startsWith(appBase + "/"))
+            return urlBase + u.slice(appBase.length);
+          return u;
+        }
+        history.pushState = function (s, t, u) {
+          _push(s, t, toUrlSpace(u));
+        };
+        history.replaceState = function (s, t, u) {
+          _replace(s, t, toUrlSpace(u));
+        };
+      })();
+    </script>
     <script>
       /* Pre-React capture listener — registered BEFORE the React bundle so it
          is first in the document-level capture queue. stopImmediatePropagation()
@@ -108,8 +154,16 @@
       })();
     </script>
 
-    <script type="module" crossorigin src="/meudenerosapp/beta/assets/index-q_187w_y.js"></script>
-    <link rel="stylesheet" crossorigin href="/meudenerosapp/beta/assets/index-zxhbujhn.css" />
+    <script
+      type="module"
+      crossorigin
+      src="/meudenerosapp/beta/assets/index-q_187w_y.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      crossorigin
+      href="/meudenerosapp/beta/assets/index-zxhbujhn.css"
+    />
     <style>
       #mob-menu-btn {
         display: none;
@@ -1092,12 +1146,13 @@
         }
 
         function onDashboard() {
-          // pathname can be "/" (custom domain / localhost)
-          // or "/meudenerosapp" / "/meudenerosapp/" (GitHub Pages subpath, no Location override)
-          // or "" in some edge cases.
-          // We treat "dashboard" as: no known sub-route in the path.
+          // Normalize: strip beta prefix first, then main prefix.
+          // This handles both the patched Location (returns /meudenerosapp/...)
+          // and the raw URL (/meudenerosapp/beta/...) as a fallback.
           var p =
-            window.location.pathname.replace(/^\/meudenerosapp/, "") || "/";
+            window.location.pathname
+              .replace(/^\/meudenerosapp\/beta/, "")
+              .replace(/^\/meudenerosapp/, "") || "/";
           return p === "/" || p === "" || p === "/dashboard";
         }
 
@@ -1983,7 +2038,20 @@
             if (parts.length === 2) {
               var yr = parseInt(parts[1]);
               var mo3 = parts[0].slice(0, 3).toLowerCase();
-              var lc = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+              var lc = [
+                "jan",
+                "fev",
+                "mar",
+                "abr",
+                "mai",
+                "jun",
+                "jul",
+                "ago",
+                "set",
+                "out",
+                "nov",
+                "dez",
+              ];
               var mi = lc.indexOf(mo3);
               if (!isNaN(yr) && mi !== -1) return { year: yr, month: mi };
             }
@@ -2280,10 +2348,13 @@
           allTxs.forEach(function (t) {
             if (t.type !== "expense") return;
             var td = new Date(t.date);
-            if (td.getFullYear() !== sel.year || td.getMonth() !== sel.month) return;
+            if (td.getFullYear() !== sel.year || td.getMonth() !== sel.month)
+              return;
             var catName = t.categoryName || "";
             if (!catName && t.categoryId) {
-              var cat = allCats.find(function (c) { return c.id === t.categoryId; });
+              var cat = allCats.find(function (c) {
+                return c.id === t.categoryId;
+              });
               if (cat) catName = cat.name;
             }
             if (!catName) return;
@@ -2315,13 +2386,18 @@
             var net = netBalance[name] !== undefined ? netBalance[name] : null;
             // netBalance holds expense totals for the selected month (always positive)
             var hasExpense = net !== null && net > 0;
-            var iconColor = hasExpense ? "rgb(239,68,68)" : "rgba(255,255,255,0.5)";
-            var iconBg    = hasExpense ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.08)";
+            var iconColor = hasExpense
+              ? "rgb(239,68,68)"
+              : "rgba(255,255,255,0.5)";
+            var iconBg = hasExpense
+              ? "rgba(239,68,68,0.12)"
+              : "rgba(255,255,255,0.08)";
             var amountHtml = "";
             if (hasExpense) {
               amountHtml =
                 '<div class="cat-row-total" style="color:rgba(239,68,68,0.8);">' +
-                "-\u00a0" + formatBRL(net) +
+                "-\u00a0" +
+                formatBRL(net) +
                 "</div>";
             }
 
