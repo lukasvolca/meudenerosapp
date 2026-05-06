@@ -8,6 +8,71 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function () {
+        var PREFIX = "__carryover__";
+        try {
+          var raw = localStorage.getItem("finance_transactions");
+          if (!raw) return;
+          var all = JSON.parse(raw);
+
+          // Remove carry-overs from previous runs
+          var txns = all.filter(function (t) {
+            return !t.id || t.id.indexOf(PREFIX) !== 0;
+          });
+
+          // Calculate net balance per year-month using real transactions only
+          var monthly = {};
+          txns.forEach(function (t) {
+            var d = new Date(t.date);
+            if (isNaN(d)) return;
+            var key =
+              d.getFullYear() +
+              "-" +
+              String(d.getMonth() + 1).padStart(2, "0");
+            if (!monthly[key]) monthly[key] = 0;
+            if (t.type === "income") monthly[key] += t.amount;
+            else if (t.type === "expense") monthly[key] -= t.amount;
+          });
+
+          var months = Object.keys(monthly).sort();
+          if (months.length <= 1) {
+            // Still save cleaned version (no stale carry-overs)
+            localStorage.setItem("finance_transactions", JSON.stringify(txns));
+            return;
+          }
+
+          // Build carry-over transactions for each month from 2nd onwards
+          var cumulative = 0;
+          var carryOvers = [];
+          for (var i = 0; i < months.length - 1; i++) {
+            cumulative += monthly[months[i]];
+            if (cumulative === 0) continue;
+            var next = months[i + 1];
+            var year = parseInt(next.split("-")[0]);
+            var month = parseInt(next.split("-")[1]) - 1;
+            // Use first day of the month so it sorts before real transactions
+            var date = new Date(year, month, 1).toISOString();
+            carryOvers.push({
+              id: PREFIX + next,
+              type: cumulative > 0 ? "income" : "expense",
+              amount: Math.abs(cumulative),
+              date: date,
+              title: "Saldo anterior",
+              categoryName: "Saldo anterior",
+              categoryId: null,
+            });
+          }
+
+          localStorage.setItem(
+            "finance_transactions",
+            JSON.stringify(txns.concat(carryOvers))
+          );
+        } catch (e) {
+          console.error("carry-over error:", e);
+        }
+      })();
+    </script>
     <script type="module" crossorigin src="/meudenerosapp/assets/index-Cy3ILb9M.js"></script>
     <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-pceCBsj8.css">
   </head>
