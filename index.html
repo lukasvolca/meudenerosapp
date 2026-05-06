@@ -8,7 +8,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script type="module" crossorigin src="/meudenerosapp/assets/index-Cy3ILb9M.js"></script>
+    <style>
+      @media (min-width: 1024px) {
+        .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      }
+      .text-teal { color: #2dd4bf; }
+    </style>
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem("finance_transactions");
+          if (!raw) return;
+          var txns = JSON.parse(raw);
+          var cleaned = txns.filter(function (t) {
+            return !t.id || t.id.indexOf("__carryover__") !== 0;
+          });
+          if (cleaned.length !== txns.length) {
+            localStorage.setItem("finance_transactions", JSON.stringify(cleaned));
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/meudenerosapp/assets/index-Cy3ILb9M.js"></script>
     <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-pceCBsj8.css">
   </head>
   <body>
