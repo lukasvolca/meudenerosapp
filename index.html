@@ -8,31 +8,297 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-pceCBsj8.css">
     <style>
       @media (min-width: 1024px) {
         .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
       }
       .text-teal { color: #2dd4bf; }
+
+      #auth-overlay {
+        position: fixed; inset: 0;
+        background: #0a0f1e;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9999;
+        font-family: 'Inter', sans-serif;
+      }
+      #auth-overlay.hidden { display: none; }
+
+      .auth-card {
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 16px;
+        padding: 36px 32px;
+        width: 100%; max-width: 360px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      }
+      .auth-icon { font-size: 32px; margin-bottom: 16px; }
+      .auth-card h1 { font-size: 20px; font-weight: 700; color: #f9fafb; margin: 0 0 20px; }
+
+      .auth-tabs {
+        display: flex; gap: 0;
+        border: 1px solid #1f2937; border-radius: 8px;
+        margin-bottom: 24px; overflow: hidden;
+      }
+      .auth-tab {
+        flex: 1; padding: 9px;
+        background: transparent; border: none;
+        color: #6b7280; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif;
+        cursor: pointer; transition: all 0.15s;
+      }
+      .auth-tab.active { background: #1f2937; color: #f9fafb; }
+
+      .auth-label { display: block; font-size: 13px; font-weight: 500; color: #9ca3af; margin-bottom: 6px; }
+      .auth-input {
+        width: 100%; padding: 10px 12px;
+        background: #0a0f1e; border: 1px solid #1f2937; border-radius: 8px;
+        color: #f9fafb; font-size: 14px; font-family: 'Inter', sans-serif;
+        box-sizing: border-box; margin-bottom: 14px;
+        outline: none; transition: border-color 0.15s;
+      }
+      .auth-input:focus { border-color: #2dd4bf; }
+      .auth-input::placeholder { color: #374151; }
+      .auth-btn {
+        width: 100%; padding: 11px;
+        background: #2dd4bf; color: #0a0f1e;
+        border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif;
+        cursor: pointer; margin-top: 6px; transition: background 0.15s;
+      }
+      .auth-btn:hover:not(:disabled) { background: #14b8a6; }
+      .auth-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      .auth-error {
+        background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
+        color: #fca5a5; padding: 9px 12px; border-radius: 8px;
+        font-size: 13px; margin-bottom: 14px; display: none;
+      }
+      .auth-error.show { display: block; }
+      .auth-success {
+        background: rgba(45,212,191,.1); border: 1px solid rgba(45,212,191,.25);
+        color: #5eead4; padding: 9px 12px; border-radius: 8px;
+        font-size: 13px; margin-bottom: 14px; display: none;
+      }
+      .auth-success.show { display: block; }
+      .auth-status { text-align: center; color: #6b7280; font-size: 13px; padding: 12px 0; }
+
+      #logout-btn {
+        position: fixed; top: 14px; right: 16px; z-index: 1000;
+        padding: 6px 14px;
+        background: transparent; border: 1px solid #1f2937; border-radius: 6px;
+        color: #6b7280; font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
+        cursor: pointer; display: none; transition: all 0.15s;
+      }
+      #logout-btn:hover { background: #111827; color: #f9fafb; }
     </style>
-    <script>
-      (function () {
-        try {
-          var raw = localStorage.getItem("finance_transactions");
-          if (!raw) return;
-          var txns = JSON.parse(raw);
-          var cleaned = txns.filter(function (t) {
-            return !t.id || t.id.indexOf("__carryover__") !== 0;
-          });
-          if (cleaned.length !== txns.length) {
-            localStorage.setItem("finance_transactions", JSON.stringify(cleaned));
-          }
-        } catch (e) {}
-      })();
-    </script>
-    <script type="module" crossorigin src="/meudenerosapp/assets/index-Cy3ILb9M.js"></script>
-    <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-pceCBsj8.css">
   </head>
   <body>
+    <div id="auth-overlay">
+      <div class="auth-card">
+        <div class="auth-icon">💰</div>
+        <h1>Finance Tracker</h1>
+
+        <div id="auth-status" class="auth-status">Verificando sessão...</div>
+
+        <div id="auth-form" style="display:none">
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Entrar</button>
+            <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Criar conta</button>
+          </div>
+
+          <div id="auth-error" class="auth-error"></div>
+          <div id="auth-success" class="auth-success"></div>
+
+          <!-- Login -->
+          <div id="panel-login">
+            <label class="auth-label">Email</label>
+            <input class="auth-input" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" />
+            <label class="auth-label">Senha</label>
+            <input class="auth-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+            <button class="auth-btn" id="btn-login" onclick="doLogin()">Entrar</button>
+          </div>
+
+          <!-- Signup -->
+          <div id="panel-signup" style="display:none">
+            <label class="auth-label">Email</label>
+            <input class="auth-input" type="email" id="signup-email" placeholder="seu@email.com" autocomplete="email" />
+            <label class="auth-label">Senha</label>
+            <input class="auth-input" type="password" id="signup-password" placeholder="mínimo 6 caracteres" autocomplete="new-password" />
+            <label class="auth-label">Confirmar senha</label>
+            <input class="auth-input" type="password" id="signup-confirm" placeholder="••••••••" autocomplete="new-password" />
+            <button class="auth-btn" id="btn-signup" onclick="doSignup()">Criar conta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button id="logout-btn">Sair</button>
     <div id="root"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+    (function () {
+      'use strict';
+      var SURL = 'https://jqwqwupqqyfyagmavido.supabase.co';
+      var SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impxd3F3dXBxcXlmeWFnbWF2aWRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTQ0MTEsImV4cCI6MjA5MzY3MDQxMX0.jFGhtIUB7t_c_-k5SOMRSJajBLjVx4agCvt0g2RbJFY';
+      var sb = window.supabase.createClient(SURL, SKEY);
+      window._sb = sb;
+
+      var nativeSet = localStorage.setItem.bind(localStorage);
+      var syncTimer = null;
+
+      localStorage.setItem = function (key, value) {
+        nativeSet(key, value);
+        if (key === 'finance_transactions' || key === 'finance_categories') {
+          clearTimeout(syncTimer);
+          syncTimer = setTimeout(pushToCloud, 1200);
+        }
+      };
+
+      function silentWrite(key, value) { nativeSet(key, value); }
+
+      window._userProfile = {};
+      window._saveProfile = async function(name, avatarBase64) {
+        var data = { display_name: name };
+        if (avatarBase64 !== void 0) data.avatar = avatarBase64;
+        var res = await sb.auth.updateUser({ data: data });
+        if (!res.error) {
+          window._userProfile.name = name;
+          if (avatarBase64 !== void 0) window._userProfile.avatar = avatarBase64;
+        }
+        return res.error;
+      };
+
+      async function pushToCloud() {
+        try {
+          var sess = (await sb.auth.getSession()).data.session;
+          if (!sess) return;
+          var txns = JSON.parse(localStorage.getItem('finance_transactions') || '[]');
+          var cats = JSON.parse(localStorage.getItem('finance_categories') || '[]');
+          await sb.from('user_data').upsert({
+            user_id: sess.user.id, transactions: txns, categories: cats,
+            updated_at: new Date().toISOString()
+          });
+        } catch (e) { console.warn('[sync]', e); }
+      }
+
+      async function loadUserData(userId) {
+        var res = await sb.from('user_data').select('transactions,categories').eq('user_id', userId).maybeSingle();
+        if (res.data) {
+          silentWrite('finance_transactions', JSON.stringify(res.data.transactions || []));
+          silentWrite('finance_categories', JSON.stringify(res.data.categories || []));
+        } else {
+          var txns = JSON.parse(localStorage.getItem('finance_transactions') || '[]');
+          var cats = JSON.parse(localStorage.getItem('finance_categories') || '[]');
+          await sb.from('user_data').upsert({ user_id: userId, transactions: txns, categories: cats });
+        }
+        try {
+          var raw = JSON.parse(localStorage.getItem('finance_transactions') || '[]');
+          var cleaned = raw.filter(function (t) { return !t.id || t.id.indexOf('__carryover__') !== 0; });
+          if (cleaned.length !== raw.length) silentWrite('finance_transactions', JSON.stringify(cleaned));
+        } catch (e) {}
+      }
+
+      function launchApp(session) {
+        if (session) {
+          window._userProfile = {
+            name: (session.user.user_metadata && session.user.user_metadata.display_name) || '',
+            email: session.user.email || '',
+            avatar: (session.user.user_metadata && session.user.user_metadata.avatar) || null
+          };
+        }
+        var s = document.createElement('script');
+        s.type = 'module'; s.crossOrigin = ''; s.src = '/meudenerosapp/assets/index-Cy3ILb9M.js';
+        document.head.appendChild(s);
+        document.getElementById('auth-overlay').classList.add('hidden');
+      }
+
+      function showLoginForm() {
+        document.getElementById('auth-status').style.display = 'none';
+        document.getElementById('auth-form').style.display = 'block';
+      }
+
+      function showError(msg) {
+        var el = document.getElementById('auth-error');
+        el.textContent = msg; el.classList.add('show');
+        document.getElementById('auth-success').classList.remove('show');
+      }
+
+      function showSuccess(msg) {
+        var el = document.getElementById('auth-success');
+        el.textContent = msg; el.classList.add('show');
+        document.getElementById('auth-error').classList.remove('show');
+      }
+
+      function clearMessages() {
+        document.getElementById('auth-error').classList.remove('show');
+        document.getElementById('auth-success').classList.remove('show');
+      }
+
+      window.switchTab = function (tab) {
+        clearMessages();
+        document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+        document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+        document.getElementById('panel-login').style.display = tab === 'login' ? 'block' : 'none';
+        document.getElementById('panel-signup').style.display = tab === 'signup' ? 'block' : 'none';
+      };
+
+      window.doLogin = async function () {
+        var email = document.getElementById('login-email').value.trim();
+        var pass = document.getElementById('login-password').value;
+        if (!email || !pass) { showError('Preencha email e senha.'); return; }
+        document.getElementById('btn-login').disabled = true;
+        clearMessages();
+        var res = await sb.auth.signInWithPassword({ email: email, password: pass });
+        if (res.error) {
+          showError('Email ou senha incorretos.');
+          document.getElementById('btn-login').disabled = false;
+          return;
+        }
+        await loadUserData(res.data.user.id);
+        launchApp(res.data.session);
+      };
+
+      window.doSignup = async function () {
+        var email = document.getElementById('signup-email').value.trim();
+        var pass = document.getElementById('signup-password').value;
+        var confirm = document.getElementById('signup-confirm').value;
+        if (!email || !pass) { showError('Preencha email e senha.'); return; }
+        if (pass.length < 6) { showError('A senha precisa ter pelo menos 6 caracteres.'); return; }
+        if (pass !== confirm) { showError('As senhas não coincidem.'); return; }
+        document.getElementById('btn-signup').disabled = true;
+        clearMessages();
+        var res = await sb.auth.signUp({ email: email, password: pass });
+        if (res.error) {
+          showError('Erro ao criar conta: ' + res.error.message);
+          document.getElementById('btn-signup').disabled = false;
+          return;
+        }
+        await loadUserData(res.data.user.id);
+        launchApp(res.data.session);
+      };
+
+      document.getElementById('logout-btn').addEventListener('click', async function () {
+        await sb.auth.signOut();
+        silentWrite('finance_transactions', '[]');
+        silentWrite('finance_categories', '[]');
+        window.location.reload();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        var loginVisible = document.getElementById('panel-login').style.display !== 'none';
+        if (loginVisible) doLogin(); else doSignup();
+      });
+
+      sb.auth.getSession().then(function (res) {
+        var sess = res.data.session;
+        if (sess) {
+          loadUserData(sess.user.id).then(function() { launchApp(sess); });
+        } else {
+          showLoginForm();
+        }
+      });
+    })();
+    </script>
   </body>
 </html>
