@@ -1,6 +1,6 @@
 {
-  "name": "Finance Tracker",
-  "short_name": "Deneros",
+  "name": "Meu Deneros",
+  "short_name": "Meu Deneros",
   "description": "Controle financeiro pessoal",
   "start_url": "/meudenerosapp/",
   "scope": "/meudenerosapp/",
