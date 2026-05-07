@@ -1,0 +1,19 @@
+{
+  "name": "Finance Tracker",
+  "short_name": "Deneros",
+  "description": "Controle financeiro pessoal",
+  "start_url": "/meudenerosapp/",
+  "scope": "/meudenerosapp/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "icons": [
+    {
+      "src": "/meudenerosapp/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

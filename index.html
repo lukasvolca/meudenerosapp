@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>Finance Tracker</title>
     <link rel="icon" type="image/svg+xml" href="/meudenerosapp/favicon.svg" />
+    <link rel="manifest" href="/meudenerosapp/manifest.json" />
+    <meta name="theme-color" content="#0a0f1e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Deneros" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -156,6 +161,12 @@
 
       function silentWrite(key, value) { nativeSet(key, value); }
 
+      window._pa = function(v) {
+        var s = String(v || "0");
+        return s.indexOf(",") !== -1
+          ? parseFloat(s.replace(/\./g, "").replace(",", ".")) || 0
+          : parseFloat(s) || 0;
+      };
       window._userProfile = {};
       window._saveProfile = async function(name, avatarBase64) {
         var data = { display_name: name };
@@ -195,6 +206,20 @@
           var raw = JSON.parse(localStorage.getItem('finance_transactions') || '[]');
           var cleaned = raw.filter(function (t) { return !t.id || t.id.indexOf('__carryover__') !== 0; });
           if (cleaned.length !== raw.length) silentWrite('finance_transactions', JSON.stringify(cleaned));
+        } catch (e) {}
+        // Migra "Pagamentos" sem tipo para income
+        try {
+          var cats2 = JSON.parse(localStorage.getItem('finance_categories') || '[]');
+          var changed = false;
+          var cats2up = cats2.map(function(c) {
+            if (c.name === 'Pagamentos' && !c.type) { changed = true; return Object.assign({}, c, {type: 'income'}); }
+            return c;
+          });
+          if (changed) {
+            silentWrite('finance_categories', JSON.stringify(cats2up));
+            var txns2 = JSON.parse(localStorage.getItem('finance_transactions') || '[]');
+            await sb.from('user_data').upsert({ user_id: userId, transactions: txns2, categories: cats2up, updated_at: new Date().toISOString() });
+          }
         } catch (e) {}
       }
 
@@ -299,6 +324,11 @@
         }
       });
     })();
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/meudenerosapp/sw.js');
+      }
     </script>
   </body>
 </html>
