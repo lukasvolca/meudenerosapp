@@ -55,6 +55,23 @@
         .__overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 45; }
         .__overlay.show { display: block; }
       }
+      @media (max-width: 530px) {
+        /* Hide mini sidebar, remove margin, reset header padding */
+        .__sb { width: 0 !important; }
+        .ml-64 { margin-left: 0 !important; }
+        header { padding-left: 8px !important; }
+        /* Show wallet trigger button inside header */
+        .__sb-trigger { display: flex !important; }
+      }
+      .__sb-trigger {
+        display: none;
+        width: 36px; height: 36px; border-radius: 10px;
+        background: linear-gradient(135deg, #2dd4bf, #0d9488);
+        border: none;
+        align-items: center; justify-content: center;
+        cursor: pointer; flex-shrink: 0; margin-right: 10px;
+        box-shadow: 0 2px 8px rgba(45,212,191,0.35);
+      }
       @media (min-width: 1024px) {
         .__sb { width: 256px !important; overflow: visible !important; }
         /* Desktop: show pills, hide dropdown */
@@ -412,6 +429,19 @@
           }
         });
         obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+        // Inject wallet trigger button into header (for < 530px)
+        // Re-injects on every page navigation (React replaces the header)
+        function injectTrigger() {
+          var header = document.querySelector('header');
+          if (!header || header.querySelector('.__sb-trigger')) return;
+          var btn = document.createElement('button');
+          btn.className = '__sb-trigger';
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>';
+          btn.onclick = toggle;
+          header.insertBefore(btn, header.firstChild);
+        }
+        new MutationObserver(injectTrigger).observe(document.body, { childList: true, subtree: true });
 
         // Event delegation: wallet icon toggle (works after any re-render)
         document.addEventListener('click', function(e) {
