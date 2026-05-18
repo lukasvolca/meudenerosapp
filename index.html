@@ -94,16 +94,9 @@
       .auth-success { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); color: #86efac; padding: 9px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
       .auth-success.show { display: block; }
       .auth-status { text-align: center; color: #6b7280; font-size: 13px; padding: 12px 0; }
-      #logout-btn {
-        position: fixed; top: 14px; right: 16px; z-index: 1000;
-        padding: 6px 14px; background: transparent; border: 1px solid #1f2937; border-radius: 6px;
-        color: #6b7280; font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
-        cursor: pointer; display: none; transition: all 0.15s;
-      }
-      #logout-btn:hover { background: #111827; color: #f9fafb; }
     </style>
-    <script type="module" crossorigin src="/meudenerosapp/assets/index-Cf237THc.js"></script>
-    <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-Bwubskcx.css">
+    <script type="module" crossorigin src="/meudenerosapp/assets/index-CtA0IlwH.js"></script>
+    <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-4am2FjuN.css">
   </head>
   <body>
     <div id="auth-overlay">
@@ -138,7 +131,6 @@
       </div>
     </div>
 
-    <button id="logout-btn">Sair</button>
     <div id="root"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -269,7 +261,6 @@
         }
         await loadUserData(res.data.user.id);
         launchApp(res.data.session);
-        document.getElementById('logout-btn').style.display = 'block';
       };
       window.doSignup = async function () {
         var email = document.getElementById('signup-email').value.trim();
@@ -288,14 +279,13 @@
         }
         await loadUserData(res.data.user.id);
         launchApp(res.data.session);
-        document.getElementById('logout-btn').style.display = 'block';
       };
-      document.getElementById('logout-btn').addEventListener('click', async function () {
+      window._logout = async function () {
         await sb.auth.signOut();
         silentWrite('finance_transactions', '[]');
         silentWrite('finance_categories', '[]');
         window.location.reload();
-      });
+      };
       document.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter') return;
         var loginVisible = document.getElementById('panel-login').style.display !== 'none';
@@ -306,8 +296,7 @@
         if (sess) {
           loadUserData(sess.user.id).then(function () {
             launchApp(sess);
-            document.getElementById('logout-btn').style.display = 'block';
-          });
+              });
         } else {
           showLoginForm();
         }
