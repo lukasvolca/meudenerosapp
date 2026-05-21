@@ -1,9 +1,9 @@
-const CACHE = 'deneros-v1';
+const CACHE = 'deneros-v2';
 const ASSETS = [
   '/meudenerosapp/',
   '/meudenerosapp/index.html',
-  '/meudenerosapp/assets/index-Cy3ILb9M.js',
-  '/meudenerosapp/assets/index-pceCBsj8.css',
+  '/meudenerosapp/assets/index-CvUx9AZz.js',
+  '/meudenerosapp/assets/index-BqHPUd_h.css',
   '/meudenerosapp/favicon.svg'
 ];
 
