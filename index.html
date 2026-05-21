@@ -39,6 +39,12 @@
         .group.glass-panel span[class*="text-muted-foreground"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; display: inline-block; vertical-align: bottom; }
         .group.glass-panel span[class*="font-bold"] { white-space: nowrap; flex-shrink: 0; }
         .group.glass-panel .opacity-0 { display: none !important; }
+        /* Category filter: dropdown on mobile, pills hidden */
+        .__cat-select { display: block !important; }
+        .__cat-pills { display: flex !important; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .__cat-pills > button:first-child { display: none !important; }
+        .__cat-pills > div { display: none; }
+        .__cat-pills .opacity-0 { opacity: 1 !important; }
       }
       @media (max-width: 530px) {
         .__sb { width: 0 !important; }
@@ -48,6 +54,9 @@
       }
       @media (min-width: 1024px) {
         .__sb { width: 256px !important; overflow: visible !important; }
+        /* Desktop: show pills, hide dropdown */
+        .__cat-pills { display: flex !important; }
+        .__cat-select { display: none !important; }
       }
       .__sb-trigger {
         display: none;
@@ -353,6 +362,33 @@
       document.addEventListener('click', function (e) {
         if (window.innerWidth >= 1024) return;
         if (e.target.closest('a') && getSidebar()) closeSidebar();
+      });
+    })();
+
+    // Category filter: sync dropdown → show matching card on mobile
+    (function() {
+      var catUpdateTimer = null;
+      function updateCatCards() {
+        if (window.innerWidth >= 1024) return;
+        var pills = document.querySelector('.__cat-pills');
+        var sel = document.querySelector('.__cat-select');
+        if (!pills || !sel) return;
+        var val = sel.value;
+        var divs = Array.from(pills.children).filter(function(c) { return c.tagName !== 'BUTTON'; });
+        var targetIdx = val === 'all' ? -1 : sel.selectedIndex - 1;
+        divs.forEach(function(d, i) {
+          d.style.display = (i === targetIdx) ? 'block' : 'none';
+        });
+        Array.from(pills.children).filter(function(c) { return c.tagName === 'BUTTON'; })
+          .forEach(function(b) { b.style.display = 'none'; });
+      }
+      function scheduleUpdate() {
+        clearTimeout(catUpdateTimer);
+        catUpdateTimer = setTimeout(updateCatCards, 60);
+      }
+      new MutationObserver(scheduleUpdate).observe(document.body, { childList: true, subtree: true });
+      document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('__cat-select')) scheduleUpdate();
       });
     })();
     </script>
