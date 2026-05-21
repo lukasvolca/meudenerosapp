@@ -42,8 +42,8 @@
         /* Category filter: dropdown on mobile, pills hidden */
         .__cat-select { display: block !important; }
         .__cat-pills { display: flex !important; flex-direction: column; gap: 8px; margin-top: 8px; }
-        .__cat-pills > button:first-child { display: none !important; }
-        .__cat-pills > div { display: none; }
+        .__cat-pills > button { display: none !important; }
+        .__cat-pills > div { display: none !important; }
         .__cat-pills .opacity-0 { opacity: 1 !important; }
       }
       @media (max-width: 530px) {
@@ -374,22 +374,27 @@
         var sel = document.querySelector('.__cat-select');
         if (!pills || !sel) return;
         var val = sel.value;
-        var divs = Array.from(pills.children).filter(function(c) { return c.tagName !== 'BUTTON'; });
+        // Hide all buttons (including "Todas")
+        Array.from(pills.children).filter(function(c) { return c.tagName === 'BUTTON'; })
+          .forEach(function(b) { b.style.setProperty('display', 'none', 'important'); });
+        // Show only the selected category div (inline style beats !important)
+        var divs = Array.from(pills.children).filter(function(c) { return c.tagName === 'DIV'; });
         var targetIdx = val === 'all' ? -1 : sel.selectedIndex - 1;
         divs.forEach(function(d, i) {
-          d.style.display = (i === targetIdx) ? 'block' : 'none';
+          d.style.setProperty('display', i === targetIdx ? 'block' : 'none', 'important');
         });
-        Array.from(pills.children).filter(function(c) { return c.tagName === 'BUTTON'; })
-          .forEach(function(b) { b.style.display = 'none'; });
       }
       function scheduleUpdate() {
         clearTimeout(catUpdateTimer);
         catUpdateTimer = setTimeout(updateCatCards, 60);
       }
+      // Run on every DOM change (React re-renders) and also periodically on page load
       new MutationObserver(scheduleUpdate).observe(document.body, { childList: true, subtree: true });
       document.addEventListener('change', function(e) {
         if (e.target.classList.contains('__cat-select')) scheduleUpdate();
       });
+      // Retry a few times after page load to catch initial render
+      [200, 500, 1000, 2000].forEach(function(ms) { setTimeout(updateCatCards, ms); });
     })();
     </script>
 
