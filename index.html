@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
@@ -12,31 +12,26 @@
     <meta name="apple-mobile-web-app-title" content="Meu Deneros" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-BqHPUd_h.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <style>
-      @media (min-width: 1024px) {
-        .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-      }
-      .text-teal { color: #2dd4bf; }
+      /* React root hidden until auth resolves */
+      #root { display: none; }
+
+      /* ── Mobile sidebar responsive ── */
       @media (max-width: 1023px) {
         .ml-64 { margin-left: 60px !important; }
         header { padding-left: 56px !important; padding-right: 8px !important; }
         header h1 { font-size: 13px !important; }
         .__sb { width: 60px !important; overflow: hidden; transition: width 0.3s ease; }
         .__sb.open { width: 256px !important; }
-        /* Header: center wallet icon, hide text when collapsed */
         .__sb:not(.open) > div:first-child { padding: 14px 10px !important; justify-content: center !important; }
         .__sb:not(.open) > div:first-child span { display: none !important; }
-        /* Nav: center icons, hide labels via font-size:0 */
         .__sb:not(.open) nav { padding: 12px 8px !important; }
         .__sb:not(.open) nav a { padding: 12px 0 !important; justify-content: center !important; gap: 0 !important; font-size: 0 !important; }
         .__sb:not(.open) nav a svg { width: 20px !important; height: 20px !important; }
-        /* Footer: hide when collapsed */
         .__sb:not(.open) > div:last-child { display: none !important; }
-        /* Fix content overflow */
         .flex-1.ml-64 { overflow-x: hidden; min-width: 0; }
-        /* Transaction items: fix mobile layout */
         .group.glass-panel { overflow: hidden; }
         .group.glass-panel > div:first-child { min-width: 0; flex: 1; overflow: hidden; }
         .group.glass-panel > div:first-child > div { min-width: 0; }
@@ -44,42 +39,32 @@
         .group.glass-panel span[class*="text-muted-foreground"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; display: inline-block; vertical-align: bottom; }
         .group.glass-panel span[class*="font-bold"] { white-space: nowrap; flex-shrink: 0; }
         .group.glass-panel .opacity-0 { display: none !important; }
-        /* Category filter: dropdown on mobile */
-        .__cat-select { display: block !important; }
-        .__cat-pills { display: flex !important; flex-direction: column; gap: 8px; margin-top: 8px; }
-        .__cat-pills > button:first-child { display: none !important; }
-        .__cat-pills > div { display: none; }
-        /* Edit/delete always visible on mobile */
-        .__cat-pills .opacity-0 { opacity: 1 !important; }
-        /* Overlay */
-        .__overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 45; }
-        .__overlay.show { display: block; }
       }
       @media (max-width: 530px) {
-        /* Hide mini sidebar, remove margin, reset header padding */
         .__sb { width: 0 !important; }
         .ml-64 { margin-left: 0 !important; }
         header { padding-left: 8px !important; }
-        /* Show wallet trigger button inside header */
         .__sb-trigger { display: flex !important; }
+      }
+      @media (min-width: 1024px) {
+        .__sb { width: 256px !important; overflow: visible !important; }
       }
       .__sb-trigger {
         display: none;
         width: 36px; height: 36px; border-radius: 10px;
-        background: linear-gradient(135deg, #2dd4bf, #0d9488);
+        background: linear-gradient(135deg, #4ade80, #16a34a);
         border: none;
         align-items: center; justify-content: center;
         cursor: pointer; flex-shrink: 0; margin-right: 10px;
-        box-shadow: 0 2px 8px rgba(45,212,191,0.35);
+        box-shadow: 0 2px 8px rgba(74,222,128,0.35);
       }
-      @media (min-width: 1024px) {
-        .__sb { width: 256px !important; overflow: visible !important; }
-        /* Desktop: show pills, hide dropdown */
-        .__cat-pills { display: flex !important; }
-        .__cat-select { display: none !important; }
+      .__overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.55); z-index: 45;
       }
-      .__hmbg { display: none !important; }
+      .__overlay.show { display: block; }
 
+      /* ── Auth overlay ── */
       #auth-overlay {
         position: fixed; inset: 0;
         background: #0a0f1e;
@@ -88,92 +73,45 @@
         font-family: 'Inter', sans-serif;
       }
       #auth-overlay.hidden { display: none; }
-
       .auth-card {
-        background: #111827;
-        border: 1px solid #1f2937;
-        border-radius: 16px;
-        padding: 36px 32px;
-        width: 100%; max-width: 360px;
+        background: #111827; border: 1px solid #1f2937; border-radius: 16px;
+        padding: 36px 32px; width: 100%; max-width: 360px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.6);
       }
       .auth-icon { font-size: 32px; margin-bottom: 16px; }
       .auth-card h1 { font-size: 20px; font-weight: 700; color: #f9fafb; margin: 0 0 20px; }
-
-      .auth-tabs {
-        display: flex; gap: 0;
-        border: 1px solid #1f2937; border-radius: 8px;
-        margin-bottom: 24px; overflow: hidden;
-      }
-      .auth-tab {
-        flex: 1; padding: 9px;
-        background: transparent; border: none;
-        color: #6b7280; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif;
-        cursor: pointer; transition: all 0.15s;
-      }
+      .auth-tabs { display: flex; border: 1px solid #1f2937; border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+      .auth-tab { flex: 1; padding: 9px; background: transparent; border: none; color: #6b7280; font-size: 13px; font-weight: 500; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.15s; }
       .auth-tab.active { background: #1f2937; color: #f9fafb; }
-
       .auth-label { display: block; font-size: 13px; font-weight: 500; color: #9ca3af; margin-bottom: 6px; }
-      .auth-input {
-        width: 100%; padding: 10px 12px;
-        background: #0a0f1e; border: 1px solid #1f2937; border-radius: 8px;
-        color: #f9fafb; font-size: 14px; font-family: 'Inter', sans-serif;
-        box-sizing: border-box; margin-bottom: 14px;
-        outline: none; transition: border-color 0.15s;
-      }
-      .auth-input:focus { border-color: #2dd4bf; }
+      .auth-input { width: 100%; padding: 10px 12px; background: #0a0f1e; border: 1px solid #1f2937; border-radius: 8px; color: #f9fafb; font-size: 14px; font-family: 'Inter', sans-serif; box-sizing: border-box; margin-bottom: 14px; outline: none; transition: border-color 0.15s; }
+      .auth-input:focus { border-color: #4ade80; }
       .auth-input::placeholder { color: #374151; }
-      .auth-btn {
-        width: 100%; padding: 11px;
-        background: #2dd4bf; color: #0a0f1e;
-        border: none; border-radius: 8px;
-        font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif;
-        cursor: pointer; margin-top: 6px; transition: background 0.15s;
-      }
-      .auth-btn:hover:not(:disabled) { background: #14b8a6; }
+      .auth-btn { width: 100%; padding: 11px; background: #4ade80; color: #0a0f1e; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; margin-top: 6px; transition: background 0.15s; }
+      .auth-btn:hover:not(:disabled) { background: #22c55e; }
       .auth-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-      .auth-error {
-        background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
-        color: #fca5a5; padding: 9px 12px; border-radius: 8px;
-        font-size: 13px; margin-bottom: 14px; display: none;
-      }
+      .auth-error { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25); color: #fca5a5; padding: 9px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
       .auth-error.show { display: block; }
-      .auth-success {
-        background: rgba(45,212,191,.1); border: 1px solid rgba(45,212,191,.25);
-        color: #5eead4; padding: 9px 12px; border-radius: 8px;
-        font-size: 13px; margin-bottom: 14px; display: none;
-      }
+      .auth-success { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); color: #86efac; padding: 9px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
       .auth-success.show { display: block; }
       .auth-status { text-align: center; color: #6b7280; font-size: 13px; padding: 12px 0; }
-
-      #logout-btn {
-        position: fixed; top: 14px; right: 16px; z-index: 1000;
-        padding: 6px 14px;
-        background: transparent; border: 1px solid #1f2937; border-radius: 6px;
-        color: #6b7280; font-size: 12px; font-weight: 500; font-family: 'Inter', sans-serif;
-        cursor: pointer; display: none; transition: all 0.15s;
-      }
-      #logout-btn:hover { background: #111827; color: #f9fafb; }
     </style>
+    <script type="module" crossorigin src="/meudenerosapp/assets/index-CvUx9AZz.js"></script>
+    <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-BqHPUd_h.css">
   </head>
   <body>
     <div id="auth-overlay">
       <div class="auth-card">
         <div class="auth-icon">💰</div>
-        <h1>Finance Tracker</h1>
-
+        <h1>Meu Deneros</h1>
         <div id="auth-status" class="auth-status">Verificando sessão...</div>
-
         <div id="auth-form" style="display:none">
           <div class="auth-tabs">
             <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Entrar</button>
             <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Criar conta</button>
           </div>
-
           <div id="auth-error" class="auth-error"></div>
           <div id="auth-success" class="auth-success"></div>
-
-          <!-- Login -->
           <div id="panel-login">
             <label class="auth-label">Email</label>
             <input class="auth-input" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" />
@@ -181,8 +119,6 @@
             <input class="auth-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
             <button class="auth-btn" id="btn-login" onclick="doLogin()">Entrar</button>
           </div>
-
-          <!-- Signup -->
           <div id="panel-signup" style="display:none">
             <label class="auth-label">Email</label>
             <input class="auth-input" type="email" id="signup-email" placeholder="seu@email.com" autocomplete="email" />
@@ -196,7 +132,6 @@
       </div>
     </div>
 
-    <button id="logout-btn">Sair</button>
     <div id="root"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -210,7 +145,6 @@
 
       var nativeSet = localStorage.setItem.bind(localStorage);
       var syncTimer = null;
-
       localStorage.setItem = function (key, value) {
         nativeSet(key, value);
         if (key === 'finance_transactions' || key === 'finance_categories') {
@@ -218,15 +152,8 @@
           syncTimer = setTimeout(pushToCloud, 1200);
         }
       };
-
       function silentWrite(key, value) { nativeSet(key, value); }
 
-      window._pa = function(v) {
-        var s = String(v || "0");
-        return s.indexOf(",") !== -1
-          ? parseFloat(s.replace(/\./g, "").replace(",", ".")) || 0
-          : parseFloat(s) || 0;
-      };
       window._userProfile = {};
       window._saveProfile = async function(name, avatarBase64) {
         var data = { display_name: name };
@@ -267,7 +194,6 @@
           var cleaned = raw.filter(function (t) { return !t.id || t.id.indexOf('__carryover__') !== 0; });
           if (cleaned.length !== raw.length) silentWrite('finance_transactions', JSON.stringify(cleaned));
         } catch (e) {}
-        // Migra "Pagamentos" sem tipo para income
         try {
           var cats2 = JSON.parse(localStorage.getItem('finance_categories') || '[]');
           var changed = false;
@@ -291,34 +217,30 @@
             avatar: (session.user.user_metadata && session.user.user_metadata.avatar) || null
           };
         }
-        var s = document.createElement('script');
-        s.type = 'module'; s.crossOrigin = ''; s.src = '/meudenerosapp/assets/index-CvUx9AZz.js';
-        document.head.appendChild(s);
         document.getElementById('auth-overlay').classList.add('hidden');
+        document.getElementById('root').style.display = 'block';
+        window._authReady = true;
+        window.dispatchEvent(new Event('authReady'));
       }
 
       function showLoginForm() {
         document.getElementById('auth-status').style.display = 'none';
         document.getElementById('auth-form').style.display = 'block';
       }
-
       function showError(msg) {
         var el = document.getElementById('auth-error');
         el.textContent = msg; el.classList.add('show');
         document.getElementById('auth-success').classList.remove('show');
       }
-
       function showSuccess(msg) {
         var el = document.getElementById('auth-success');
         el.textContent = msg; el.classList.add('show');
         document.getElementById('auth-error').classList.remove('show');
       }
-
       function clearMessages() {
         document.getElementById('auth-error').classList.remove('show');
         document.getElementById('auth-success').classList.remove('show');
       }
-
       window.switchTab = function (tab) {
         clearMessages();
         document.getElementById('tab-login').classList.toggle('active', tab === 'login');
@@ -326,7 +248,6 @@
         document.getElementById('panel-login').style.display = tab === 'login' ? 'block' : 'none';
         document.getElementById('panel-signup').style.display = tab === 'signup' ? 'block' : 'none';
       };
-
       window.doLogin = async function () {
         var email = document.getElementById('login-email').value.trim();
         var pass = document.getElementById('login-password').value;
@@ -342,7 +263,6 @@
         await loadUserData(res.data.user.id);
         launchApp(res.data.session);
       };
-
       window.doSignup = async function () {
         var email = document.getElementById('signup-email').value.trim();
         var pass = document.getElementById('signup-password').value;
@@ -361,135 +281,89 @@
         await loadUserData(res.data.user.id);
         launchApp(res.data.session);
       };
-
-      document.getElementById('logout-btn').addEventListener('click', async function () {
+      window._logout = async function () {
         await sb.auth.signOut();
         silentWrite('finance_transactions', '[]');
         silentWrite('finance_categories', '[]');
         window.location.reload();
-      });
-
+      };
       document.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter') return;
         var loginVisible = document.getElementById('panel-login').style.display !== 'none';
         if (loginVisible) doLogin(); else doSignup();
       });
-
       sb.auth.getSession().then(function (res) {
         var sess = res.data.session;
         if (sess) {
-          loadUserData(sess.user.id).then(function() { launchApp(sess); });
+          loadUserData(sess.user.id).then(function () {
+            launchApp(sess);
+              });
         } else {
           showLoginForm();
         }
       });
     })();
     </script>
+
     <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/meudenerosapp/sw.js');
+    /* Mobile sidebar drawer */
+    (function () {
+      var overlay = document.createElement('div');
+      overlay.className = '__overlay';
+      overlay.onclick = closeSidebar;
+      document.body.appendChild(overlay);
+
+      function getSidebar() { return document.querySelector('.w-64.h-screen.fixed.left-0'); }
+      function toggle() {
+        var sb = getSidebar();
+        if (!sb) return;
+        sb.classList.contains('open') ? closeSidebar() : openSidebar();
+      }
+      function openSidebar() {
+        var sb = getSidebar(); if (sb) sb.classList.add('__sb', 'open');
+        overlay.classList.add('show');
+      }
+      function closeSidebar() {
+        var sb = getSidebar(); if (sb) sb.classList.remove('open');
+        overlay.classList.remove('show');
       }
 
-      // Mobile sidebar drawer
-      (function() {
-        var overlay = document.createElement('div');
-        overlay.className = '__overlay';
-        overlay.onclick = close;
-        document.body.appendChild(overlay);
+      new MutationObserver(function () {
+        var sb = getSidebar();
+        if (sb && !sb.classList.contains('__sb')) sb.classList.add('__sb');
+      }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 
+      function injectTrigger() {
+        var header = document.querySelector('header');
+        if (!header || header.querySelector('.__sb-trigger')) return;
+        var btn = document.createElement('button');
+        btn.className = '__sb-trigger';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>';
+        btn.onclick = toggle;
+        header.insertBefore(btn, header.firstChild);
+      }
+      new MutationObserver(injectTrigger).observe(document.body, { childList: true, subtree: true });
 
-        function getSidebar() {
-          return document.querySelector('.w-64.h-screen.fixed.left-0');
-        }
-        function toggle() {
-          var sb = getSidebar();
-          if (!sb) return;
-          var isOpen = sb.classList.contains('open');
-          if (isOpen) { close(); } else { open(); }
-        }
-        function open() {
-          var sb = getSidebar();
-          if (sb) { sb.classList.add('__sb', 'open'); }
-          overlay.classList.add('show');
-        }
-        function close() {
-          var sb = getSidebar();
-          if (sb) { sb.classList.remove('open'); }
-          overlay.classList.remove('show');
-        }
+      document.addEventListener('click', function (e) {
+        if (window.innerWidth >= 1024) return;
+        var sb = getSidebar(); if (!sb) return;
+        var icon = sb.querySelector('div[class*="w-10 h-10"]');
+        if (icon && (icon === e.target || icon.contains(e.target))) toggle();
+      });
+      document.addEventListener('click', function (e) {
+        if (window.innerWidth >= 1024) return;
+        if (e.target.closest('a') && getSidebar()) closeSidebar();
+      });
+    })();
+    </script>
 
-        // Keep __sb class on sidebar after React re-renders
-        var obs = new MutationObserver(function() {
-          var sb = getSidebar();
-          if (sb && !sb.classList.contains('__sb')) {
-            sb.classList.add('__sb');
-            // Re-attach wallet icon cursor on every re-render
-            var icon = sb.querySelector('div[class*="w-10 h-10"]');
-            if (icon) icon.style.cursor = 'pointer';
-          }
-        });
-        obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-
-        // Inject wallet trigger button into header (for < 530px)
-        // Re-injects on every page navigation (React replaces the header)
-        function injectTrigger() {
-          var header = document.querySelector('header');
-          if (!header || header.querySelector('.__sb-trigger')) return;
-          var btn = document.createElement('button');
-          btn.className = '__sb-trigger';
-          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>';
-          btn.onclick = toggle;
-          header.insertBefore(btn, header.firstChild);
-        }
-        new MutationObserver(injectTrigger).observe(document.body, { childList: true, subtree: true });
-
-        // Event delegation: wallet icon toggle (works after any re-render)
-        document.addEventListener('click', function(e) {
-          if (window.innerWidth >= 1024) return;
-          var sb = getSidebar();
-          if (!sb) return;
-          var icon = sb.querySelector('div[class*="w-10 h-10"]');
-          if (icon && (icon === e.target || icon.contains(e.target))) toggle();
-        });
-
-        // Close sidebar when nav link is clicked on mobile
-        document.addEventListener('click', function(e) {
-          if (window.innerWidth >= 1024) return;
-          if (e.target.closest('a') && getSidebar()) close();
-        });
-
-        // Category cards: show only selected (by index matching dropdown)
-        var catUpdateTimer = null;
-        function updateCatCards() {
-          if (window.innerWidth >= 1024) return;
-          var pills = document.querySelector('.__cat-pills');
-          var sel = document.querySelector('.__cat-select');
-          if (!pills || !sel) return;
-          var val = sel.value;
-          // Collect only div children (category cards), skip buttons
-          var divs = Array.from(pills.children).filter(function(c) { return c.tagName !== 'BUTTON'; });
-          // selectedIndex 0 = "Todas", 1+ = categories (matches divs[0], divs[1]...)
-          var targetIdx = val === 'all' ? -1 : sel.selectedIndex - 1;
-          divs.forEach(function(d, i) {
-            d.style.display = (i === targetIdx) ? 'block' : 'none';
-          });
-          // Also hide pill buttons
-          Array.from(pills.children).filter(function(c) { return c.tagName === 'BUTTON'; })
-            .forEach(function(b) { b.style.display = 'none'; });
-        }
-
-        function scheduleUpdate() {
-          clearTimeout(catUpdateTimer);
-          catUpdateTimer = setTimeout(updateCatCards, 60);
-        }
-
-        new MutationObserver(scheduleUpdate)
-          .observe(document.body, { childList: true, subtree: true });
-
-        document.addEventListener('change', function(e) {
-          if (e.target.classList.contains('__cat-select')) scheduleUpdate();
-        });
-      })();
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        var base = document.querySelector('link[rel="manifest"]').getAttribute('href').replace('manifest.json', '');
+        navigator.serviceWorker.register(base + 'sw.js');
+      });
+    }
     </script>
   </body>
 </html>
