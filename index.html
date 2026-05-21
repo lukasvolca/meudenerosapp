@@ -32,13 +32,13 @@
         .__sb:not(.open) nav a svg { width: 20px !important; height: 20px !important; }
         .__sb:not(.open) > div:last-child { display: none !important; }
         .flex-1.ml-64 { overflow-x: hidden; min-width: 0; }
-        .group.glass-panel { overflow: hidden; }
-        .group.glass-panel > div:first-child { min-width: 0; flex: 1; overflow: hidden; }
-        .group.glass-panel > div:first-child > div { min-width: 0; }
-        .group.glass-panel p[class*="font-semibold"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .group.glass-panel span[class*="text-muted-foreground"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; display: inline-block; vertical-align: bottom; }
-        .group.glass-panel span[class*="font-bold"] { white-space: nowrap; flex-shrink: 0; }
-        .group.glass-panel .opacity-0 { display: none !important; }
+        .group.glass-panel, .group.rounded-xl { overflow: hidden; }
+        .group.glass-panel > div:first-child, .group.rounded-xl > div:first-child { min-width: 0; flex: 1; overflow: hidden; }
+        .group.glass-panel > div:first-child > div, .group.rounded-xl > div:first-child > div { min-width: 0; }
+        .group.glass-panel p[class*="font-semibold"], .group.rounded-xl p[class*="font-semibold"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .group.glass-panel span[class*="text-muted-foreground"], .group.rounded-xl span[class*="text-muted-foreground"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; display: inline-block; vertical-align: bottom; }
+        .group.glass-panel span[class*="font-bold"], .group.rounded-xl span[class*="font-bold"] { white-space: nowrap; flex-shrink: 0; }
+        .group.glass-panel .opacity-0, .group.rounded-xl .opacity-0 { display: none !important; }
         /* Category filter: dropdown on mobile, pills hidden */
         .__cat-select { display: block !important; }
         .__cat-pills { display: flex !important; flex-direction: column; gap: 8px; margin-top: 8px; }
