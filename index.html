@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -18,7 +18,7 @@
       /* React root hidden until auth resolves */
       #root { display: none; }
 
-      /* ── Mobile sidebar responsive ── */
+      /* â”€â”€ Mobile sidebar responsive â”€â”€ */
       @media (max-width: 1023px) {
         .ml-64 { margin-left: 60px !important; }
         header { padding-left: 56px !important; padding-right: 8px !important; }
@@ -73,7 +73,7 @@
       }
       .__overlay.show { display: block; }
 
-      /* ── Auth overlay ── */
+      /* â”€â”€ Auth overlay â”€â”€ */
       #auth-overlay {
         position: fixed; inset: 0;
         background: #0a0f1e;
@@ -105,15 +105,15 @@
       .auth-success.show { display: block; }
       .auth-status { text-align: center; color: #6b7280; font-size: 13px; padding: 12px 0; }
     </style>
-    <script type="module" crossorigin src="/meudenerosapp/assets/index-D9JJ0oX9.js"></script>
+    <script type="module" crossorigin src="/meudenerosapp/assets/index-Bowcq-aH.js"></script>
     <link rel="stylesheet" crossorigin href="/meudenerosapp/assets/index-B9W4gc2R.css">
   </head>
   <body>
     <div id="auth-overlay">
       <div class="auth-card">
-        <div class="auth-icon">💰</div>
+        <div class="auth-icon">ðŸ’°</div>
         <h1>Meu Deneros</h1>
-        <div id="auth-status" class="auth-status">Verificando sessão...</div>
+        <div id="auth-status" class="auth-status">Verificando sessÃ£o...</div>
         <div id="auth-form" style="display:none">
           <div class="auth-tabs">
             <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Entrar</button>
@@ -125,16 +125,16 @@
             <label class="auth-label">Email</label>
             <input class="auth-input" type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" />
             <label class="auth-label">Senha</label>
-            <input class="auth-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+            <input class="auth-input" type="password" id="login-password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password" />
             <button class="auth-btn" id="btn-login" onclick="doLogin()">Entrar</button>
           </div>
           <div id="panel-signup" style="display:none">
             <label class="auth-label">Email</label>
             <input class="auth-input" type="email" id="signup-email" placeholder="seu@email.com" autocomplete="email" />
             <label class="auth-label">Senha</label>
-            <input class="auth-input" type="password" id="signup-password" placeholder="mínimo 6 caracteres" autocomplete="new-password" />
+            <input class="auth-input" type="password" id="signup-password" placeholder="mÃ­nimo 6 caracteres" autocomplete="new-password" />
             <label class="auth-label">Confirmar senha</label>
-            <input class="auth-input" type="password" id="signup-confirm" placeholder="••••••••" autocomplete="new-password" />
+            <input class="auth-input" type="password" id="signup-confirm" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="new-password" />
             <button class="auth-btn" id="btn-signup" onclick="doSignup()">Criar conta</button>
           </div>
         </div>
@@ -278,7 +278,7 @@
         var confirm = document.getElementById('signup-confirm').value;
         if (!email || !pass) { showError('Preencha email e senha.'); return; }
         if (pass.length < 6) { showError('A senha precisa ter pelo menos 6 caracteres.'); return; }
-        if (pass !== confirm) { showError('As senhas não coincidem.'); return; }
+        if (pass !== confirm) { showError('As senhas nÃ£o coincidem.'); return; }
         document.getElementById('btn-signup').disabled = true;
         clearMessages();
         var res = await sb.auth.signUp({ email: email, password: pass });
@@ -365,7 +365,7 @@
       });
     })();
 
-    // Category filter: sync dropdown → show matching card on mobile
+    // Category filter: sync dropdown â†’ show matching card on mobile
     (function() {
       var catUpdateTimer = null;
       function updateCatCards() {
@@ -408,3 +408,4 @@
     </script>
   </body>
 </html>
+
