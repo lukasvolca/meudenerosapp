@@ -1,4 +1,4 @@
-const CACHE = 'deneros-v3';
+const CACHE = 'deneros-v4';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -13,8 +13,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Navegações (o index.html): sempre buscar fresco, ignorando o cache HTTP,
+  // pra que novos deploys apareçam no próximo reload (cai no cache só se offline).
+  const isNav = e.request.mode === 'navigate';
+  const req = isNav ? new Request(e.request, { cache: 'no-store' }) : e.request;
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then(r => {
         const clone = r.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone));
